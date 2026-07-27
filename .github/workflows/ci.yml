@@ -1,0 +1,32 @@
+# Name of the workflow — displayed in the GitHub Actions UI
+name: CI
+
+# Trigger the workflow on pushes or pull requests to the main branch
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Single job that installs deps, builds, and runs tests
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # Check out the repository code
+      - uses: actions/checkout@v4
+
+      # Set up Node.js and restore npm cache for faster installs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Install dependencies (clean install using lock file)
+      - run: npm ci
+
+      # Type-check and bundle the app
+      - run: npm run build
+
+      # Run unit tests
+      - run: npm test
