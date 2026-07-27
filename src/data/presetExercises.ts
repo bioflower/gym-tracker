@@ -4,7 +4,7 @@ export const presetExercises: Exercise[] = [
   // Lower body
   { id: 'lower-dumbbell-deadlift', name: 'Dumbbell Deadlift', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
   { id: 'lower-goblet-squat', name: 'Goblet Squat', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
-  { id: 'lower-dumbbell-lunge', name: 'Dumbbell Lunge', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
+  { id: 'lower-barbell-lunge', name: 'Barbell Lunge', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
   { id: 'lower-romanian-deadlift', name: 'Romanian Deadlift', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
   { id: 'lower-barbell-squat', name: 'Barbell Squat', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
   { id: 'lower-leg-press', name: 'Leg Press', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
@@ -12,10 +12,10 @@ export const presetExercises: Exercise[] = [
   { id: 'lower-calf-raise', name: 'Calf Raise', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
   // Chest
   { id: 'chest-push-up', name: 'Push-up', category: 'chest', trackingType: 'reps', isPreset: true },
-  { id: 'chest-bench-press', name: 'Bench Press', category: 'chest', trackingType: 'weight-reps', isPreset: true },
+  { id: 'chest-barbell-bench-press', name: 'Barbell Bench Press', category: 'chest', trackingType: 'weight-reps', isPreset: true },
   { id: 'chest-dumbbell-bench-press', name: 'Dumbbell Bench Press', category: 'chest', trackingType: 'weight-reps', isPreset: true },
   { id: 'chest-incline-dumbbell-press', name: 'Incline Dumbbell Press', category: 'chest', trackingType: 'weight-reps', isPreset: true },
-  { id: 'chest-chest-fly', name: 'Chest Fly', category: 'chest', trackingType: 'weight-reps', isPreset: true },
+  { id: 'chest-fly', name: 'Chest Fly', category: 'chest', trackingType: 'weight-reps', isPreset: true },
   // Back
   { id: 'back-dumbbell-row', name: 'Dumbbell Row', category: 'back', trackingType: 'weight-reps', isPreset: true },
   { id: 'back-barbell-row', name: 'Barbell Row', category: 'back', trackingType: 'weight-reps', isPreset: true },
