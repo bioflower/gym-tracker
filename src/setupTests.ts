@@ -7,7 +7,6 @@ const localStorageMock = {
   removeItem: (key: string) => { delete store[key]; },
   clear: () => { Object.keys(store).forEach(k => delete store[k]); },
   length: 0,
-  key: (_index: number) => null,
 };
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
