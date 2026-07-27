@@ -29,3 +29,287 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* Navigation */
+.navigation {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.nav-link {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-small);
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.nav-link.active {
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+/* Main content */
+.main-content {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-md);
+  padding-bottom: calc(var(--space-xl) * 2);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-small);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.btn:hover { opacity: 0.85; }
+.btn:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+
+.btn-primary { background: var(--text-primary); color: var(--surface); border-color: var(--text-primary); }
+.btn-success { background: var(--success); color: white; border-color: var(--success); }
+.btn-danger { background: var(--danger); color: white; border-color: var(--danger); }
+.btn-secondary { background: var(--surface-muted); color: var(--text-secondary); border-color: var(--border); }
+.btn-outline { background: transparent; border-color: var(--border); }
+.btn-danger-outline { background: transparent; border-color: var(--danger); color: var(--danger); }
+
+.btn-large { padding: var(--space-md) var(--space-lg); font-size: 1rem; width: 100%; }
+.btn-small { padding: var(--space-xs) var(--space-sm); font-size: 0.8rem; }
+
+/* Inputs */
+.input {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  color: var(--text-primary);
+  width: 100%;
+}
+
+.input:focus { outline: 2px solid var(--text-primary); outline-offset: 1px; }
+
+.input-small { padding: var(--space-xs) var(--space-sm); width: auto; }
+.input-unit { max-width: 60px; }
+
+/* Cards */
+.exercise-card, .plan-day-card, .history-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-medium);
+  margin-bottom: var(--space-md);
+  overflow: hidden;
+}
+
+.exercise-card.completed { border-color: var(--success); }
+
+.exercise-card-header, .plan-day-header, .history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md);
+  cursor: pointer;
+}
+
+.exercise-card-header:hover { background: var(--surface-muted); }
+
+.exercise-name { font-size: 1rem; margin-bottom: var(--space-xs); }
+.exercise-meta { font-size: 0.8rem; color: var(--text-secondary); }
+.exercise-status { display: flex; align-items: center; gap: var(--space-sm); }
+
+.exercise-card-body {
+  padding: 0 var(--space-md) var(--space-md);
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-success { background: #e8f5e9; color: var(--success); }
+.badge-active { background: #fff3e0; color: #e65100; }
+.badge-pending { background: var(--surface-muted); color: var(--text-secondary); }
+.badge-warning { background: #fff3e0; color: #e65100; }
+.badge-custom { background: #e3f2fd; color: #1565c0; }
+
+/* Set rows */
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+  flex-wrap: wrap;
+}
+
+.set-label {
+  min-width: 40px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.set-input-group {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: var(--space-md);
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-large);
+  padding: var(--space-lg);
+  max-width: 400px;
+  width: 100%;
+}
+
+.modal h2 { margin-bottom: var(--space-md); }
+.modal p { margin-bottom: var(--space-md); color: var(--text-secondary); }
+.modal-actions { display: flex; gap: var(--space-sm); margin-top: var(--space-md); }
+.modal-actions .btn { flex: 1; }
+
+/* Form */
+.form-group { margin-bottom: var(--space-md); }
+.form-group label { display: block; margin-bottom: var(--space-xs); font-weight: 500; font-size: 0.9rem; }
+.form-error { color: var(--danger); font-size: 0.85rem; margin-top: var(--space-xs); }
+
+/* Plan page */
+.plan-day { margin-bottom: var(--space-md); }
+.plan-day-header h2 { font-size: 1.1rem; cursor: pointer; }
+.plan-day-header h2:hover { color: var(--text-secondary); }
+.plan-day-controls, .plan-exercise-controls { display: flex; gap: var(--space-xs); }
+.plan-exercise-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  border-top: 1px solid var(--border);
+}
+.plan-add-exercise { padding: var(--space-sm) var(--space-md); }
+.plan-add-day {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+.plan-add-day .input { flex: 1; }
+
+/* Exercise library */
+.filter-bar {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+.exercise-grid { margin-top: var(--space-md); }
+.exercise-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-small);
+  margin-bottom: var(--space-sm);
+}
+.exercise-item-info strong { display: block; }
+.exercise-item-meta { font-size: 0.8rem; color: var(--text-secondary); }
+.exercise-item .badge { margin-top: var(--space-xs); }
+
+/* History */
+.history-date { display: block; font-size: 0.85rem; color: var(--text-secondary); }
+.history-meta { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-xs); }
+.history-card-body { padding: 0 var(--space-md) var(--space-md); border-top: 1px solid var(--border); padding-top: var(--space-md); }
+.history-exercise { margin-top: var(--space-sm); }
+.history-set { font-size: 0.85rem; color: var(--text-secondary); padding-left: var(--space-md); }
+
+/* Today page */
+.workout-header { margin-bottom: var(--space-lg); }
+.workout-name { font-size: 1.5rem; margin-bottom: var(--space-xs); }
+.workout-meta { color: var(--text-secondary); margin-bottom: var(--space-xs); }
+.workout-progress { color: var(--text-secondary); font-size: 0.9rem; }
+
+.workout-preview {
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+.workout-preview h1 { font-size: 2rem; margin-bottom: var(--space-sm); }
+.workout-preview p { color: var(--text-secondary); margin-bottom: var(--space-lg); }
+
+.workout-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.exercise-list { margin-bottom: var(--space-md); }
+
+/* Previous result */
+.previous-result {
+  background: var(--surface-muted);
+  border-radius: var(--radius-small);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-sm);
+  font-size: 0.85rem;
+}
+
+.previous-set { color: var(--text-secondary); padding-left: var(--space-sm); }
+
+/* Next workout preview */
+.next-workout-label { font-weight: 600; margin-top: var(--space-sm); }
+.next-workout-list {
+  list-style: none;
+  padding: 0;
+}
+.next-workout-list li {
+  padding: var(--space-xs) 0;
+  color: var(--text-secondary);
+}
+
+/* Settings */
+.settings-section { margin-top: var(--space-lg); }
+.settings-section h2 { margin-bottom: var(--space-md); }
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
