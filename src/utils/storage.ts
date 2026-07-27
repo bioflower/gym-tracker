@@ -1,7 +1,5 @@
-import { AppData } from '../types/gym';
-import { presetExercises } from '../data/presetExercises';
+import type { AppData } from '../types/gym';
 import { getDefaultWorkoutPlan } from '../data/defaultWorkoutPlan';
-import { generateId } from './validation';
 
 const STORAGE_KEY = 'gym-tracker-data-v1';
 

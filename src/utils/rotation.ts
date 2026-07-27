@@ -1,6 +1,4 @@
-import { WorkoutDay, ActiveWorkoutSession, ActiveExercise, Exercise } from '../types/gym';
-import { generateId } from './validation';
-import { getTodayISO, nowISO } from './dateTime';
+import type { WorkoutDay } from '../types/gym';
 
 export function getCurrentWorkout(
   workoutPlan: WorkoutDay[],

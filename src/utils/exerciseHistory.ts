@@ -1,4 +1,4 @@
-import { WorkoutSession, CompletedExercise, ActiveExercise, TrackingType, CompletedSet, ExerciseSet } from '../types/gym';
+import type { WorkoutSession, CompletedExercise, ActiveExercise, TrackingType, CompletedSet, ExerciseSet } from '../types/gym';
 
 export function findMostRecentExerciseResult(
   history: WorkoutSession[],

@@ -1,4 +1,4 @@
-import { Exercise } from '../types/gym';
+import type { Exercise } from '../types/gym';
 
 export const presetExercises: Exercise[] = [
   // Lower body

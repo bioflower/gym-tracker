@@ -1,4 +1,4 @@
-import { WorkoutDay } from '../types/gym';
+import type { WorkoutDay } from '../types/gym';
 
 export function getDefaultWorkoutPlan(): WorkoutDay[] {
   return [
