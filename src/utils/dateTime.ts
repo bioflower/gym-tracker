@@ -1,5 +1,6 @@
 export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
   return date.toLocaleDateString('en-US', {
     weekday: 'short',
     year: 'numeric',
@@ -31,7 +32,11 @@ export function formatDurationFromDates(start: string | null, end: string | null
 }
 
 export function getTodayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function nowISO(): string {
