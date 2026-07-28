@@ -35,7 +35,7 @@ export function TodayPage() {
     );
   }
 
-  const incompleteExercises = active.exercises.filter(e => !e.completed);
+  const incompleteExercises = active.exercises.filter(e => !e.sets.every(s => s.completed));
   const allComplete = incompleteExercises.length === 0;
 
   function handleFinish() {
