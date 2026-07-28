@@ -39,6 +39,7 @@ class CompletedSetSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompletedSet
         fields = "__all__"
+        read_only_fields = ("completed_exercise",)
 
 
 class CompletedExerciseSerializer(serializers.ModelSerializer):
@@ -47,6 +48,7 @@ class CompletedExerciseSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompletedExercise
         fields = "__all__"
+        read_only_fields = ("workout_session",)
 
     def create(self, validated_data):
         sets_data = validated_data.pop("sets", [])
@@ -62,7 +64,7 @@ class WorkoutSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkoutSession
         fields = "__all__"
-        read_only_fields = ("id",)
+        read_only_fields = ("id", "user")
 
     def create(self, validated_data):
         exercises_data = validated_data.pop("exercises", [])
