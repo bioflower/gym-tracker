@@ -1,6 +1,9 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export function Navigation() {
+  const { logout } = useAuth();
+
   return (
     <nav className="navigation" aria-label="Main navigation">
       <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
@@ -18,6 +21,9 @@ export function Navigation() {
       <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
         Settings
       </NavLink>
+      <button className="nav-link logout-btn" onClick={logout}>
+        Logout
+      </button>
     </nav>
   );
 }
