@@ -1,44 +1,69 @@
 import { useState, useCallback, useEffect } from 'react';
 import type {
   AppData, ActiveWorkoutSession, ActiveExercise,
-  Exercise, ExerciseSet, WorkoutSession, WeightRepSet,
-  RepsOnlySet, DurationSet, DistanceDurationSet,
-  TrackingType, WorkoutDay,
+  WorkoutDay, Exercise, ExerciseSet,
 } from '../types/gym';
 import { loadAppData, saveAppData, clearAppData, getDefaultAppData } from '../utils/storage';
 import { advanceWorkout, getCurrentWorkout } from '../utils/rotation';
-import { convertActiveToCompletedExercise } from '../utils/exerciseHistory';
 import { generateId } from '../utils/validation';
 import { getTodayISO, nowISO } from '../utils/dateTime';
 import { presetExercises } from '../data/presetExercises';
+import * as workouts from '../api/workouts';
+import { isOnline, enqueue, processQueue, setupSyncListener } from '../api/sync';
 
 export function useGymTracker() {
   const [data, setData] = useState<AppData>(() => loadAppData());
 
+  // Sync on mount and when coming online
+  useEffect(() => {
+    const cleanup = setupSyncListener();
+    if (isOnline()) {
+      syncFromServer();
+    }
+    return cleanup;
+  }, []);
+
+  // Persist to localStorage on every change (offline cache)
   useEffect(() => {
     saveAppData(data);
   }, [data]);
 
-  const createEmptySets = (trackingType: TrackingType, count: number = 3): ExerciseSet[] => {
+  async function syncFromServer() {
+    try {
+      const [exercises, plan, sessions] = await Promise.all([
+        workouts.fetchExercises(),
+        workouts.fetchPlan(),
+        workouts.fetchSessions(),
+      ]);
+      const customExercises = exercises.filter(e => !e.isPreset);
+      setData(prev => ({
+        ...prev,
+        customExercises,
+        workoutPlan: plan,
+        workoutHistory: sessions,
+      }));
+    } catch {
+      // offline — use localStorage cache
+    }
+  }
+
+  const createEmptySets = useCallback((trackingType: string, count: number = 3): ExerciseSet[] => {
     const sets: ExerciseSet[] = [];
     for (let i = 0; i < count; i++) {
       const id = generateId();
+      const base = { id, startedAt: null as string | null, completedAt: null as string | null, completed: false };
       if (trackingType === 'weight-reps') {
-        sets.push({ id, weight: null, weightUnit: 'kg', reps: null, completed: false } as WeightRepSet);
+        sets.push({ ...base, weight: null, weightUnit: 'kg', reps: null } as ExerciseSet);
       } else if (trackingType === 'reps') {
-        sets.push({ id, reps: null, completed: false } as RepsOnlySet);
+        sets.push({ ...base, reps: null } as ExerciseSet);
       } else if (trackingType === 'duration') {
-        sets.push({ id, durationSeconds: null, completed: false } as DurationSet);
+        sets.push({ ...base, durationSeconds: null } as ExerciseSet);
       } else {
-        sets.push({ id, distance: null, distanceUnit: 'km', durationSeconds: null, notes: '', completed: false } as DistanceDurationSet);
+        sets.push({ ...base, distance: null, distanceUnit: 'km', durationSeconds: null, notes: '' } as ExerciseSet);
       }
     }
     return sets;
-  };
-
-  const getAllExercises = useCallback((): Exercise[] => {
-    return [...presetExercises, ...data.customExercises];
-  }, [data.customExercises]);
+  }, []);
 
   const startWorkout = useCallback(() => {
     const workout = getCurrentWorkout(data.workoutPlan, data.currentWorkoutIndex);
@@ -50,10 +75,7 @@ export function useGymTracker() {
         id: generateId(),
         exerciseId: pe.exerciseId,
         exerciseName: exerciseDef?.name ?? 'Unknown',
-        trackingType: exerciseDef?.trackingType ?? 'reps',
-        startedAt: null,
-        completedAt: null,
-        completed: false,
+        trackingType: exerciseDef?.trackingType ?? ('reps' as const),
         sets: createEmptySets(exerciseDef?.trackingType ?? 'reps', pe.targetSets),
         notes: pe.notes ?? '',
       };
@@ -69,83 +91,86 @@ export function useGymTracker() {
       exercises,
     };
     setData(prev => ({ ...prev, activeWorkout: session }));
-  }, [data.workoutPlan, data.currentWorkoutIndex, data.customExercises]);
+  }, [data.workoutPlan, data.currentWorkoutIndex, data.customExercises, createEmptySets]);
 
   const getCurrentWorkoutDay = useCallback((): WorkoutDay | null => {
     return getCurrentWorkout(data.workoutPlan, data.currentWorkoutIndex);
   }, [data.workoutPlan, data.currentWorkoutIndex]);
 
-  const finishWorkout = useCallback(() => {
+  const finishWorkout = useCallback(async () => {
     if (!data.activeWorkout) return;
-    const completedExercises = data.activeWorkout.exercises.map(convertActiveToCompletedExercise);
-    const session: WorkoutSession = {
-      id: data.activeWorkout.id,
-      workoutDayId: data.activeWorkout.workoutDayId,
-      workoutName: data.activeWorkout.workoutName,
+    const sessionData: Record<string, unknown> = {
+      workout_day: data.activeWorkout.workoutDayId,
+      workout_name: data.activeWorkout.workoutName,
       date: data.activeWorkout.date,
-      startedAt: data.activeWorkout.startedAt,
-      completedAt: nowISO(),
+      started_at: data.activeWorkout.startedAt,
+      completed_at: nowISO(),
       status: 'completed',
-      exercises: completedExercises,
+      exercises: data.activeWorkout.exercises.map(e => ({
+        exercise: e.exerciseId,
+        exercise_name: e.exerciseName,
+        tracking_type: e.trackingType,
+        sets: e.sets.map(s => ({
+          type: e.trackingType,
+          weight: 'weight' in s ? s.weight : null,
+          weight_unit: 'weightUnit' in s ? s.weightUnit : null,
+          reps: 'reps' in s ? s.reps : null,
+          duration_seconds: 'durationSeconds' in s ? s.durationSeconds : null,
+          distance: 'distance' in s ? s.distance : null,
+          distance_unit: 'distanceUnit' in s ? s.distanceUnit : null,
+          started_at: s.startedAt,
+          completed_at: s.completedAt,
+          completed: s.completed,
+        })),
+      })),
     };
+
+    if (isOnline()) {
+      try {
+        await workouts.saveSession(sessionData as never);
+      } catch {
+        enqueue({ endpoint: '/workouts/sessions/', method: 'POST', body: sessionData });
+      }
+    } else {
+      enqueue({ endpoint: '/workouts/sessions/', method: 'POST', body: sessionData });
+    }
+
     setData(prev => ({
       ...prev,
       activeWorkout: null,
-      workoutHistory: [session, ...prev.workoutHistory],
       currentWorkoutIndex: advanceWorkout(prev.workoutPlan, prev.currentWorkoutIndex),
     }));
   }, [data.activeWorkout, data.workoutPlan, data.currentWorkoutIndex]);
 
-  const skipWorkout = useCallback(() => {
+  const skipWorkout = useCallback(async () => {
     const workout = getCurrentWorkout(data.workoutPlan, data.currentWorkoutIndex);
     if (!workout) return;
-    const session: WorkoutSession = {
-      id: generateId(),
-      workoutDayId: workout.id,
-      workoutName: workout.name,
+    const sessionData: Record<string, unknown> = {
+      workout_day: workout.id,
+      workout_name: workout.name,
       date: getTodayISO(),
-      startedAt: null,
-      completedAt: null,
+      started_at: null,
+      completed_at: null,
       status: 'skipped',
       exercises: [],
     };
+
+    if (isOnline()) {
+      try {
+        await workouts.saveSession(sessionData as never);
+      } catch {
+        enqueue({ endpoint: '/workouts/sessions/', method: 'POST', body: sessionData });
+      }
+    } else {
+      enqueue({ endpoint: '/workouts/sessions/', method: 'POST', body: sessionData });
+    }
+
     setData(prev => ({
       ...prev,
       activeWorkout: null,
-      workoutHistory: [session, ...prev.workoutHistory],
       currentWorkoutIndex: advanceWorkout(prev.workoutPlan, prev.currentWorkoutIndex),
     }));
   }, [data.workoutPlan, data.currentWorkoutIndex]);
-
-  const startExercise = useCallback((exerciseId: string) => {
-    setData(prev => {
-      if (!prev.activeWorkout) return prev;
-      return {
-        ...prev,
-        activeWorkout: {
-          ...prev.activeWorkout,
-          exercises: prev.activeWorkout.exercises.map(e =>
-            e.id === exerciseId ? { ...e, startedAt: nowISO() } : e
-          ),
-        },
-      };
-    });
-  }, []);
-
-  const completeExercise = useCallback((exerciseId: string) => {
-    setData(prev => {
-      if (!prev.activeWorkout) return prev;
-      return {
-        ...prev,
-        activeWorkout: {
-          ...prev.activeWorkout,
-          exercises: prev.activeWorkout.exercises.map(e =>
-            e.id === exerciseId ? { ...e, completed: true, completedAt: nowISO() } : e
-          ),
-        },
-      };
-    });
-  }, []);
 
   const updateSet = useCallback((exerciseId: string, setId: string, updates: Partial<ExerciseSet>) => {
     setData(prev => {
@@ -179,7 +204,7 @@ export function useGymTracker() {
         },
       };
     });
-  }, []);
+  }, [createEmptySets]);
 
   const removeSet = useCallback((exerciseId: string, setId: string) => {
     setData(prev => {
@@ -198,14 +223,14 @@ export function useGymTracker() {
     });
   }, []);
 
-  const addCustomExercise = useCallback((exercise: Exercise) => {
+  const addCustomExercise = useCallback(async (exercise: Exercise) => {
     setData(prev => ({
       ...prev,
       customExercises: [...prev.customExercises, exercise],
     }));
   }, []);
 
-  const editCustomExercise = useCallback((id: string, updates: Partial<Exercise>) => {
+  const editCustomExercise = useCallback(async (id: string, updates: Partial<Exercise>) => {
     setData(prev => ({
       ...prev,
       customExercises: prev.customExercises.map(e =>
@@ -214,18 +239,27 @@ export function useGymTracker() {
     }));
   }, []);
 
-  const removeCustomExercise = useCallback((id: string) => {
+  const removeCustomExercise = useCallback(async (id: string) => {
     setData(prev => ({
       ...prev,
       customExercises: prev.customExercises.filter(e => e.id !== id),
     }));
   }, []);
 
-  const updateWorkoutPlan = useCallback((plan: WorkoutDay[]) => {
+  const updateWorkoutPlan = useCallback(async (plan: WorkoutDay[]) => {
     setData(prev => ({ ...prev, workoutPlan: plan }));
+    if (isOnline()) {
+      try {
+        await workouts.savePlan(plan);
+      } catch {
+        enqueue({ endpoint: '/workouts/plan/', method: 'PUT', body: plan });
+      }
+    } else {
+      enqueue({ endpoint: '/workouts/plan/', method: 'PUT', body: plan });
+    }
   }, []);
 
-  const addWorkoutDay = useCallback((day: WorkoutDay) => {
+  const addWorkoutDay = useCallback(async (day: WorkoutDay) => {
     setData(prev => ({ ...prev, workoutPlan: [...prev.workoutPlan, day] }));
   }, []);
 
@@ -239,14 +273,16 @@ export function useGymTracker() {
     return getCurrentWorkout(data.workoutPlan, nextIndex);
   }, [data.workoutPlan, data.currentWorkoutIndex]);
 
+  const getAllExercises = useCallback((): Exercise[] => {
+    return [...presetExercises, ...data.customExercises];
+  }, [data.customExercises]);
+
   return {
     data,
     startWorkout,
     getCurrentWorkoutDay,
     finishWorkout,
     skipWorkout,
-    startExercise,
-    completeExercise,
     updateSet,
     addSet,
     removeSet,
@@ -258,5 +294,6 @@ export function useGymTracker() {
     resetAll,
     getAllExercises,
     getNextWorkout,
+    syncFromServer,
   };
 }

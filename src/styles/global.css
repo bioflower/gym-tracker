@@ -301,6 +301,41 @@ a {
 .settings-section { margin-top: var(--space-lg); }
 .settings-section h2 { margin-bottom: var(--space-md); }
 
+/* Auth pages */
+.auth-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-md);
+  padding-top: var(--space-xl);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.form-field label {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.auth-alt {
+  text-align: center;
+  margin-top: var(--space-lg);
+  color: var(--text-secondary);
+}
+
+.auth-alt a {
+  text-decoration: underline;
+}
+
 /* Screen reader only */
 .sr-only {
   position: absolute;

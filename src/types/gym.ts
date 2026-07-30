@@ -32,18 +32,24 @@ export interface WeightRepSet {
   weight: number | null;
   weightUnit: WeightUnit;
   reps: number | null;
+  startedAt: string | null;
+  completedAt: string | null;
   completed: boolean;
 }
 
 export interface RepsOnlySet {
   id: string;
   reps: number | null;
+  startedAt: string | null;
+  completedAt: string | null;
   completed: boolean;
 }
 
 export interface DurationSet {
   id: string;
   durationSeconds: number | null;
+  startedAt: string | null;
+  completedAt: string | null;
   completed: boolean;
 }
 
@@ -53,6 +59,8 @@ export interface DistanceDurationSet {
   distanceUnit: DistanceUnit;
   durationSeconds: number | null;
   notes: string;
+  startedAt: string | null;
+  completedAt: string | null;
   completed: boolean;
 }
 
@@ -88,9 +96,6 @@ export interface ActiveExercise {
   exerciseId: string;
   exerciseName: string;
   trackingType: TrackingType;
-  startedAt: string | null;
-  completedAt: string | null;
-  completed: boolean;
   sets: ExerciseSet[];
   notes: string;
 }
@@ -104,6 +109,8 @@ export interface CompletedSet {
   durationSeconds?: number | null;
   distance?: number | null;
   distanceUnit?: DistanceUnit;
+  startedAt?: string | null;
+  completedAt?: string | null;
 }
 
 export interface CompletedExercise {
@@ -111,8 +118,6 @@ export interface CompletedExercise {
   exerciseId: string;
   exerciseName: string;
   trackingType: TrackingType;
-  startedAt: string | null;
-  completedAt: string | null;
   sets: CompletedSet[];
 }
 
