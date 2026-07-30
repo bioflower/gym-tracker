@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import {
+import type {
   AppData, ActiveWorkoutSession, ActiveExercise,
   WorkoutDay, Exercise, ExerciseSet,
 } from '../types/gym';

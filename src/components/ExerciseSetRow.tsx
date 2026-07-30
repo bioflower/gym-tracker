@@ -1,4 +1,4 @@
-import { ExerciseSet, TrackingType, WeightRepSet, RepsOnlySet, DurationSet, DistanceDurationSet } from '../types/gym';
+import type { ExerciseSet, TrackingType, WeightRepSet, RepsOnlySet, DurationSet, DistanceDurationSet } from '../types/gym';
 
 interface ExerciseSetRowProps {
   set: ExerciseSet;

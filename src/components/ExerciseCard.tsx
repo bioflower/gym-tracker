@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActiveExercise, ExerciseSet } from '../types/gym';
+import type { ActiveExercise, ExerciseSet } from '../types/gym';
 import { ExerciseSetRow } from './ExerciseSetRow';
 
 interface ExerciseCardProps {
