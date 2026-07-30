@@ -1,6 +1,7 @@
 {
   "dev": {
     "project_name": "gym-tracker",
+    "profile_name": "default",
     "runtime": "python3.12",
     "aws_region": "us-east-1",
     "django_settings": "config.settings",
