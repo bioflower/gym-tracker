@@ -56,6 +56,13 @@ a {
   color: var(--text-primary);
 }
 
+.logout-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
 /* Main content */
 .main-content {
   max-width: 640px;
