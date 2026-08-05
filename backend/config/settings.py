@@ -1,15 +1,61 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+from typing import Dict
 import dj_database_url
 from dotenv import load_dotenv
-
+from config.aws_parameters import load_aws_parameters
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-key-change-in-prod")
-DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() == "true"
+# Zappa/Lamda sets AWS_EXECUTION_ENV automatically
+RUNNING_IN_AWS_LAMBDA = bool(os.environ.get("AWS_EXECUTION_ENV"))
+
+# Load the local .env file only during local development. 
+# Lambda should use its execution role and Parameter Store instead
+if not RUNNING_IN_AWS_LAMBDA:
+    load_dotenv(BASE_DIR / ".env")
+
+APP_ENV: str = os.environ.get("APP_ENV", "local")
+remote_config: Dict[str, str] = dict()
+
+if APP_ENV.startswith("aws-"):
+    remote_config: Dict[str, str] = load_aws_parameters()
+
+def get_config(name, str, default: str | None = None) -> str | None:
+    """
+    Resolution order:
+    1. Process environment variable
+    2. AWS Parameter Store
+    3. Default value
+    """
+    return os.environ.get(name) or remote_config.get(name) or default
+
+
+SECRET_KEY = get_config("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("DJANGO_SECRET_KEY is not configured")
+
+DEBUG = get_config("DJANGO_DEBUG", "False").lower() == "true"
+
+DATABASE_URL = get_config("DATABASE_URL")
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=60,
+            ssl_require=APP_ENV.startswith("aws-")
+        )
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "db.sqlite3")
+        }
+
+    }
+
 ALLOWED_HOSTS = [
     host.strip() for host in os.environ.get(
         "DJANGO_ALLOWED_HOSTS",
@@ -61,20 +107,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
-
-if os.environ.get("DATABASE_URL"):
-    DATABASES["default"] = dj_database_url.config(
-        default=os.environ["DATABASE_URL"],
-        conn_max_age=0,
-        ssl_require=True
-    )
 
 AUTH_USER_MODEL = "accounts.User"
 

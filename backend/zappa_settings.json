@@ -6,14 +6,20 @@
     "aws_region": "us-east-1",
     "django_settings": "config.settings",
     "s3_bucket": "gym-tracker-zappa-dev",
-    "manage_roles": false,
-    "role_name": "gym-tracker-ZappaLambdaExecutionRole",
+    "manage_roles": true,
     "timeout_seconds": 30,
     "memory_size": 512,
     "environment_variables": {
       "APP_ENV": "aws-dev",
       "AWS_PARAMETER_PREFIX": "/gym-tracker/dev",
       "AWS_APP_REGION": "us-east-1"
-    }  
+    },
+    
+    "exclude": [
+      ".env",
+      ".env.*",
+      ".git/*",
+      "frontend/*"
+    ]
   }
 }
