@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 from scripts.reconcile_deploy_env import (
     reconcile_amplify_env_var,
+    reconcile_cors_origins,
     resolve_amplify_url,
     resolve_api_gateway_url,
 )
@@ -118,6 +119,62 @@ class ReconcileAmplifyEnvVarTests(unittest.TestCase):
             appId="app-id",
             branchName="main",
             environmentVariables={"VITE_API_URL": "https://new.example.com"},
+        )
+
+
+class ReconcileCorsOriginsTests(unittest.TestCase):
+    def test_no_change_when_origin_already_present(self):
+        client = MagicMock()
+        client.get_parameter.return_value = {
+            "Parameter": {
+                "Value": "http://localhost:5173,https://main.example.amplifyapp.com",
+                "Type": "String",
+            }
+        }
+
+        changed = reconcile_cors_origins(
+            client, "/gym-tracker/dev/CORS_ALLOWED_ORIGINS",
+            "https://main.example.amplifyapp.com",
+        )
+
+        self.assertFalse(changed)
+        client.put_parameter.assert_not_called()
+
+    def test_appends_missing_origin_and_preserves_existing(self):
+        client = MagicMock()
+        client.get_parameter.return_value = {
+            "Parameter": {"Value": "http://localhost:5173", "Type": "String"}
+        }
+
+        changed = reconcile_cors_origins(
+            client, "/gym-tracker/dev/CORS_ALLOWED_ORIGINS",
+            "https://main.example.amplifyapp.com",
+        )
+
+        self.assertTrue(changed)
+        client.put_parameter.assert_called_once_with(
+            Name="/gym-tracker/dev/CORS_ALLOWED_ORIGINS",
+            Value="http://localhost:5173,https://main.example.amplifyapp.com",
+            Type="String",
+            Overwrite=True,
+        )
+
+    def test_preserves_secure_string_type(self):
+        client = MagicMock()
+        client.get_parameter.return_value = {
+            "Parameter": {"Value": "http://localhost:5173", "Type": "SecureString"}
+        }
+
+        reconcile_cors_origins(
+            client, "/gym-tracker/dev/CORS_ALLOWED_ORIGINS",
+            "https://main.example.amplifyapp.com",
+        )
+
+        client.put_parameter.assert_called_once_with(
+            Name="/gym-tracker/dev/CORS_ALLOWED_ORIGINS",
+            Value="http://localhost:5173,https://main.example.amplifyapp.com",
+            Type="SecureString",
+            Overwrite=True,
         )
 
 

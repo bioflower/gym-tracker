@@ -70,3 +70,29 @@ def reconcile_amplify_env_var(
     # Amplify does not auto-rebuild on an env var change; trigger it explicitly.
     amplify_client.start_job(appId=app_id, branchName=branch_name, jobType="RELEASE")
     return True
+
+
+def reconcile_cors_origins(
+    ssm_client, parameter_name: str, origin_to_ensure: str
+) -> bool:
+    """Ensure `origin_to_ensure` is present in the comma-separated
+    CORS_ALLOWED_ORIGINS SSM parameter, without removing anything already
+    there. Preserves the parameter's original Type (e.g. SecureString) on
+    write. Returns True if a write was made.
+    """
+    parameter = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)[
+        "Parameter"
+    ]
+    origins = [origin.strip() for origin in parameter["Value"].split(",") if origin.strip()]
+
+    if origin_to_ensure in origins:
+        return False
+
+    origins.append(origin_to_ensure)
+    ssm_client.put_parameter(
+        Name=parameter_name,
+        Value=",".join(origins),
+        Type=parameter["Type"],
+        Overwrite=True,
+    )
+    return True
