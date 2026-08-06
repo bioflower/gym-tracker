@@ -1,0 +1,9 @@
+.venv/
+.venv-lambda/
+.env
+.env.*
+db.sqlite3
+__pycache__/
+*.pyc
+.git/
+docs/

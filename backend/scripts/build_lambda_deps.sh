@@ -28,11 +28,12 @@ docker build --platform linux/amd64 \
 
 echo "==> Extracting built dependencies..."
 TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "$TMP_DIR"' EXIT
+trap 'rm -rf "$TMP_DIR"; [ -n "${CONTAINER_ID:-}" ] && docker rm "$CONTAINER_ID" >/dev/null 2>&1 || true' EXIT
 
 CONTAINER_ID="$(docker create --platform linux/amd64 "$IMAGE_NAME")"
 docker cp "$CONTAINER_ID:/out" "$TMP_DIR/out"
 docker rm "$CONTAINER_ID" > /dev/null
+CONTAINER_ID=""
 
 if [ ! -d "$TMP_DIR/out" ] || [ -z "$(ls -A "$TMP_DIR/out")" ]; then
   echo "ERROR: Docker build produced an empty /out directory. Aborting without touching $DEPLOY_VENV." >&2
