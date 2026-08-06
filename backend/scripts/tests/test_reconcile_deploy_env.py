@@ -1,7 +1,11 @@
 import unittest
 from unittest.mock import MagicMock
 
-from scripts.reconcile_deploy_env import resolve_api_gateway_url
+from scripts.reconcile_deploy_env import (
+    reconcile_amplify_env_var,
+    resolve_amplify_url,
+    resolve_api_gateway_url,
+)
 
 
 class ResolveApiGatewayUrlTests(unittest.TestCase):
@@ -41,9 +45,6 @@ class ResolveApiGatewayUrlTests(unittest.TestCase):
             resolve_api_gateway_url(client, "gym-tracker-dev", "dev", "us-east-1")
 
 
-from scripts.reconcile_deploy_env import resolve_amplify_url
-
-
 class ResolveAmplifyUrlTests(unittest.TestCase):
     def test_builds_url_from_app_and_branch(self):
         client = MagicMock()
@@ -58,6 +59,65 @@ class ResolveAmplifyUrlTests(unittest.TestCase):
         client.get_app.assert_called_once_with(appId="d123456abcdef")
         client.get_branch.assert_called_once_with(
             appId="d123456abcdef", branchName="main"
+        )
+
+
+class ReconcileAmplifyEnvVarTests(unittest.TestCase):
+    def test_no_change_when_value_already_matches(self):
+        client = MagicMock()
+        client.get_branch.return_value = {
+            "branch": {"environmentVariables": {"VITE_API_URL": "https://same.example.com"}}
+        }
+
+        changed = reconcile_amplify_env_var(
+            client, "app-id", "main", "VITE_API_URL", "https://same.example.com"
+        )
+
+        self.assertFalse(changed)
+        client.update_branch.assert_not_called()
+        client.start_job.assert_not_called()
+
+    def test_updates_and_preserves_other_env_vars(self):
+        client = MagicMock()
+        client.get_branch.return_value = {
+            "branch": {
+                "environmentVariables": {
+                    "VITE_API_URL": "https://old.example.com",
+                    "SOME_OTHER_VAR": "keep-me",
+                }
+            }
+        }
+
+        changed = reconcile_amplify_env_var(
+            client, "app-id", "main", "VITE_API_URL", "https://new.example.com"
+        )
+
+        self.assertTrue(changed)
+        client.update_branch.assert_called_once_with(
+            appId="app-id",
+            branchName="main",
+            environmentVariables={
+                "VITE_API_URL": "https://new.example.com",
+                "SOME_OTHER_VAR": "keep-me",
+            },
+        )
+        client.start_job.assert_called_once_with(
+            appId="app-id", branchName="main", jobType="RELEASE"
+        )
+
+    def test_sets_value_when_key_absent(self):
+        client = MagicMock()
+        client.get_branch.return_value = {"branch": {"environmentVariables": {}}}
+
+        changed = reconcile_amplify_env_var(
+            client, "app-id", "main", "VITE_API_URL", "https://new.example.com"
+        )
+
+        self.assertTrue(changed)
+        client.update_branch.assert_called_once_with(
+            appId="app-id",
+            branchName="main",
+            environmentVariables={"VITE_API_URL": "https://new.example.com"},
         )
 
 

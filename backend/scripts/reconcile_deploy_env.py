@@ -46,3 +46,27 @@ def resolve_amplify_url(amplify_client, app_id: str, branch_name: str) -> str:
     app = amplify_client.get_app(appId=app_id)["app"]
     branch = amplify_client.get_branch(appId=app_id, branchName=branch_name)["branch"]
     return f"https://{branch['branchName']}.{app['defaultDomain']}"
+
+
+def reconcile_amplify_env_var(
+    amplify_client, app_id: str, branch_name: str, key: str, value: str
+) -> bool:
+    """Ensure `key=value` is set in the Amplify branch's env vars.
+
+    Preserves every other existing environment variable on the branch —
+    `amplify:UpdateBranch` replaces the whole map, so this always
+    fetch-merges before writing. Returns True if a write was made.
+    """
+    branch = amplify_client.get_branch(appId=app_id, branchName=branch_name)["branch"]
+    current_env = dict(branch.get("environmentVariables", {}))
+
+    if current_env.get(key) == value:
+        return False
+
+    current_env[key] = value
+    amplify_client.update_branch(
+        appId=app_id, branchName=branch_name, environmentVariables=current_env
+    )
+    # Amplify does not auto-rebuild on an env var change; trigger it explicitly.
+    amplify_client.start_job(appId=app_id, branchName=branch_name, jobType="RELEASE")
+    return True
