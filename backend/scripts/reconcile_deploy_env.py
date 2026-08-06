@@ -96,3 +96,16 @@ def reconcile_cors_origins(
         Overwrite=True,
     )
     return True
+
+
+def force_lambda_cold_start(lambda_client, function_name: str) -> None:
+    """Force a new Lambda execution environment so warm containers pick up
+    freshly-written SSM parameter values immediately, instead of waiting
+    for their next natural cold start (config/aws_parameters.py caches
+    Parameter Store reads for the life of a warm container via
+    @lru_cache).
+    """
+    lambda_client.update_function_configuration(
+        FunctionName=function_name,
+        Description=f"force-cold-{int(time.time())}",
+    )

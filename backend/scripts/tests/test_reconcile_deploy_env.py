@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from scripts.reconcile_deploy_env import (
+    force_lambda_cold_start,
     reconcile_amplify_env_var,
     reconcile_cors_origins,
     resolve_amplify_url,
@@ -176,6 +177,18 @@ class ReconcileCorsOriginsTests(unittest.TestCase):
             Type="SecureString",
             Overwrite=True,
         )
+
+
+class ForceLambdaColdStartTests(unittest.TestCase):
+    def test_updates_function_description_with_force_cold_prefix(self):
+        client = MagicMock()
+
+        force_lambda_cold_start(client, "gym-tracker-dev")
+
+        client.update_function_configuration.assert_called_once()
+        _, kwargs = client.update_function_configuration.call_args
+        self.assertEqual(kwargs["FunctionName"], "gym-tracker-dev")
+        self.assertTrue(kwargs["Description"].startswith("force-cold-"))
 
 
 if __name__ == "__main__":
