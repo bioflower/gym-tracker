@@ -127,6 +127,8 @@ Permissions policy — least-privilege, resource-scoped where the AWS API suppor
     "Resource": "arn:aws:amplify:us-east-1:<account>:apps/<amplify-app-id>*" },
   { "Effect": "Allow", "Action": ["ssm:GetParameter", "ssm:PutParameter"],
     "Resource": "arn:aws:ssm:us-east-1:<account>:parameter/gym-tracker/dev/CORS_ALLOWED_ORIGINS" },
+  { "Effect": "Allow", "Action": "kms:Decrypt",
+    "Resource": "arn:aws:kms:us-east-1:<account>:key/*" },
   { "Effect": "Allow", "Action": ["lambda:GetFunctionConfiguration", "lambda:UpdateFunctionConfiguration"],
     "Resource": "arn:aws:lambda:us-east-1:<account>:function:gym-tracker-dev" }
 ]
@@ -134,7 +136,11 @@ Permissions policy — least-privilege, resource-scoped where the AWS API suppor
 
 `apigateway:GET` needs the wildcard resource because `get-rest-apis` is a list operation
 without per-resource ARN scoping in IAM; every other action is scoped to the specific
-app/parameter/function.
+app/parameter/function. `kms:Decrypt` is required because the script calls
+`get_parameter` with `WithDecryption=True` to support a `SecureString`-typed parameter
+(the reconciliation script preserves the parameter `Type` on write). It is scoped to the
+key prefix (`key/*`) because the parameter has no key pinned in code and uses the
+account's default SSM KMS key.
 
 This role is intentionally separate from (and much narrower than) the `gym-tracker-admin`
 SSO profile used for interactive `zappa` deploys — it can only read API Gateway/Amplify/SSM

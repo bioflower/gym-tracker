@@ -951,6 +951,11 @@ Create `/tmp/gym-tracker-github-actions-policy.json` (replace `<account-id>` and
     },
     {
       "Effect": "Allow",
+      "Action": "kms:Decrypt",
+      "Resource": "arn:aws:kms:us-east-1:<account-id>:key/*"
+    },
+    {
+      "Effect": "Allow",
       "Action": ["lambda:GetFunctionConfiguration", "lambda:UpdateFunctionConfiguration"],
       "Resource": "arn:aws:lambda:us-east-1:<account-id>:function:gym-tracker-dev"
     }

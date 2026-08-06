@@ -16,7 +16,7 @@ jobs:
       AWS_REGION: us-east-1
       API_GATEWAY_NAME: gym-tracker-dev
       ZAPPA_STAGE: dev
-      AMPLIFY_APP_ID: REPLACE_WITH_AMPLIFY_APP_ID
+      AMPLIFY_APP_ID: d3f69wcemgebls
       AMPLIFY_BRANCH_NAME: main
       SSM_PARAMETER_NAME: /gym-tracker/dev/CORS_ALLOWED_ORIGINS
       LAMBDA_FUNCTION_NAME: gym-tracker-dev
@@ -34,7 +34,7 @@ jobs:
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::REPLACE_WITH_ACCOUNT_ID:role/gym-tracker-github-actions
+          role-to-assume: arn:aws:iam::214182382176:role/gym-tracker-github-actions
           aws-region: us-east-1
 
       - name: Reconcile deploy environment
