@@ -98,6 +98,9 @@ export interface ActiveExercise {
   trackingType: TrackingType;
   sets: ExerciseSet[];
   notes: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  completed: boolean;
 }
 
 export interface CompletedSet {
@@ -118,6 +121,8 @@ export interface CompletedExercise {
   exerciseId: string;
   exerciseName: string;
   trackingType: TrackingType;
+  startedAt?: string | null;
+  completedAt?: string | null;
   sets: CompletedSet[];
 }
 

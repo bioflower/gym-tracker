@@ -9,7 +9,7 @@ import { generateId } from '../utils/validation';
 import { getTodayISO, nowISO } from '../utils/dateTime';
 import { presetExercises } from '../data/presetExercises';
 import * as workouts from '../api/workouts';
-import { isOnline, enqueue, processQueue, setupSyncListener } from '../api/sync';
+import { isOnline, enqueue, setupSyncListener } from '../api/sync';
 
 export function useGymTracker() {
   const [data, setData] = useState<AppData>(() => loadAppData());
@@ -78,6 +78,9 @@ export function useGymTracker() {
         trackingType: exerciseDef?.trackingType ?? ('reps' as const),
         sets: createEmptySets(exerciseDef?.trackingType ?? 'reps', pe.targetSets),
         notes: pe.notes ?? '',
+        startedAt: null,
+        completedAt: null,
+        completed: false,
       };
     });
     const session: ActiveWorkoutSession = {
@@ -223,6 +226,40 @@ export function useGymTracker() {
     });
   }, []);
 
+  const startExercise = useCallback((exerciseId: string) => {
+    setData(prev => {
+      if (!prev.activeWorkout) return prev;
+      return {
+        ...prev,
+        activeWorkout: {
+          ...prev.activeWorkout,
+          exercises: prev.activeWorkout.exercises.map(e =>
+            e.id === exerciseId && !e.startedAt
+              ? { ...e, startedAt: nowISO(), completed: false }
+              : e
+          ),
+        },
+      };
+    });
+  }, []);
+
+  const completeExercise = useCallback((exerciseId: string) => {
+    setData(prev => {
+      if (!prev.activeWorkout) return prev;
+      return {
+        ...prev,
+        activeWorkout: {
+          ...prev.activeWorkout,
+          exercises: prev.activeWorkout.exercises.map(e =>
+            e.id === exerciseId
+              ? { ...e, completedAt: nowISO(), completed: true }
+              : e
+          ),
+        },
+      };
+    });
+  }, []);
+
   const addCustomExercise = useCallback(async (exercise: Exercise) => {
     setData(prev => ({
       ...prev,
@@ -286,6 +323,8 @@ export function useGymTracker() {
     updateSet,
     addSet,
     removeSet,
+    startExercise,
+    completeExercise,
     addCustomExercise,
     editCustomExercise,
     removeCustomExercise,
