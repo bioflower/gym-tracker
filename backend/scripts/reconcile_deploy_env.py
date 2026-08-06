@@ -39,3 +39,10 @@ def resolve_api_gateway_url(
 
     api_id = matches[0]["id"]
     return f"https://{api_id}.execute-api.{region}.amazonaws.com/{stage}/api"
+
+
+def resolve_amplify_url(amplify_client, app_id: str, branch_name: str) -> str:
+    """Return the default (non-custom-domain) URL for an Amplify branch."""
+    app = amplify_client.get_app(appId=app_id)["app"]
+    branch = amplify_client.get_branch(appId=app_id, branchName=branch_name)["branch"]
+    return f"https://{branch['branchName']}.{app['defaultDomain']}"

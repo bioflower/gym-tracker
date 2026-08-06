@@ -41,5 +41,25 @@ class ResolveApiGatewayUrlTests(unittest.TestCase):
             resolve_api_gateway_url(client, "gym-tracker-dev", "dev", "us-east-1")
 
 
+from scripts.reconcile_deploy_env import resolve_amplify_url
+
+
+class ResolveAmplifyUrlTests(unittest.TestCase):
+    def test_builds_url_from_app_and_branch(self):
+        client = MagicMock()
+        client.get_app.return_value = {
+            "app": {"appId": "d123456abcdef", "defaultDomain": "d123456abcdef.amplifyapp.com"}
+        }
+        client.get_branch.return_value = {"branch": {"branchName": "main"}}
+
+        url = resolve_amplify_url(client, "d123456abcdef", "main")
+
+        self.assertEqual(url, "https://main.d123456abcdef.amplifyapp.com")
+        client.get_app.assert_called_once_with(appId="d123456abcdef")
+        client.get_branch.assert_called_once_with(
+            appId="d123456abcdef", branchName="main"
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
