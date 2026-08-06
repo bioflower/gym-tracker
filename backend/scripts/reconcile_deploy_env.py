@@ -109,3 +109,50 @@ def force_lambda_cold_start(lambda_client, function_name: str) -> None:
         FunctionName=function_name,
         Description=f"force-cold-{int(time.time())}",
     )
+
+
+def main() -> int:
+    region = os.environ.get("AWS_REGION", "us-east-1")
+    rest_api_name = os.environ["API_GATEWAY_NAME"]
+    stage = os.environ.get("ZAPPA_STAGE", "dev")
+    amplify_app_id = os.environ["AMPLIFY_APP_ID"]
+    amplify_branch = os.environ.get("AMPLIFY_BRANCH_NAME", "main")
+    ssm_parameter_name = os.environ["SSM_PARAMETER_NAME"]
+    lambda_function_name = os.environ["LAMBDA_FUNCTION_NAME"]
+
+    apigateway_client = boto3.client("apigateway", region_name=region)
+    amplify_client = boto3.client("amplify", region_name=region)
+    ssm_client = boto3.client("ssm", region_name=region)
+    lambda_client = boto3.client("lambda", region_name=region)
+
+    try:
+        api_url = resolve_api_gateway_url(apigateway_client, rest_api_name, stage, region)
+    except LookupError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    print(f"Resolved API Gateway URL: {api_url}")
+
+    amplify_changed = reconcile_amplify_env_var(
+        amplify_client, amplify_app_id, amplify_branch, "VITE_API_URL", api_url
+    )
+    print(f"Amplify VITE_API_URL {'updated' if amplify_changed else 'already up to date'}")
+
+    try:
+        amplify_url = resolve_amplify_url(amplify_client, amplify_app_id, amplify_branch)
+    except ClientError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    print(f"Resolved Amplify URL: {amplify_url}")
+
+    cors_changed = reconcile_cors_origins(ssm_client, ssm_parameter_name, amplify_url)
+    print(f"CORS_ALLOWED_ORIGINS {'updated' if cors_changed else 'already up to date'}")
+
+    if cors_changed:
+        force_lambda_cold_start(lambda_client, lambda_function_name)
+        print(f"Forced cold start on {lambda_function_name}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

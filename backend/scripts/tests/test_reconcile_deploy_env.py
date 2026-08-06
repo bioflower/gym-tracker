@@ -1,8 +1,10 @@
+import os
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from scripts.reconcile_deploy_env import (
     force_lambda_cold_start,
+    main,
     reconcile_amplify_env_var,
     reconcile_cors_origins,
     resolve_amplify_url,
@@ -189,6 +191,117 @@ class ForceLambdaColdStartTests(unittest.TestCase):
         _, kwargs = client.update_function_configuration.call_args
         self.assertEqual(kwargs["FunctionName"], "gym-tracker-dev")
         self.assertTrue(kwargs["Description"].startswith("force-cold-"))
+
+
+class MainTests(unittest.TestCase):
+    ENV = {
+        "AWS_REGION": "us-east-1",
+        "API_GATEWAY_NAME": "gym-tracker-dev",
+        "ZAPPA_STAGE": "dev",
+        "AMPLIFY_APP_ID": "app-id",
+        "AMPLIFY_BRANCH_NAME": "main",
+        "SSM_PARAMETER_NAME": "/gym-tracker/dev/CORS_ALLOWED_ORIGINS",
+        "LAMBDA_FUNCTION_NAME": "gym-tracker-dev",
+    }
+
+    def _make_clients(self, apigateway, amplify, ssm, lambda_):
+        clients = {
+            "apigateway": apigateway,
+            "amplify": amplify,
+            "ssm": ssm,
+            "lambda": lambda_,
+        }
+        return lambda service_name, region_name=None: clients[service_name]
+
+    @patch("scripts.reconcile_deploy_env.boto3")
+    @patch.dict(os.environ, ENV, clear=True)
+    def test_success_path_reconciles_both_sides_and_forces_cold_start(self, mock_boto3):
+        apigateway = MagicMock()
+        apigateway.get_rest_apis.return_value = {
+            "items": [{"id": "abc123", "name": "gym-tracker-dev"}]
+        }
+
+        amplify = MagicMock()
+        amplify.get_branch.return_value = {
+            "branch": {"branchName": "main", "environmentVariables": {}}
+        }
+        amplify.get_app.return_value = {
+            "app": {"defaultDomain": "app-id.amplifyapp.com"}
+        }
+
+        ssm = MagicMock()
+        ssm.get_parameter.return_value = {
+            "Parameter": {"Value": "http://localhost:5173", "Type": "String"}
+        }
+
+        lambda_client = MagicMock()
+
+        mock_boto3.client.side_effect = self._make_clients(
+            apigateway, amplify, ssm, lambda_client
+        )
+
+        exit_code = main()
+
+        self.assertEqual(exit_code, 0)
+        amplify.update_branch.assert_called_once()
+        ssm.put_parameter.assert_called_once()
+        lambda_client.update_function_configuration.assert_called_once()
+
+    @patch("scripts.reconcile_deploy_env.boto3")
+    @patch.dict(os.environ, ENV, clear=True)
+    def test_returns_1_when_api_gateway_not_found(self, mock_boto3):
+        apigateway = MagicMock()
+        apigateway.get_rest_apis.return_value = {"items": []}
+
+        mock_boto3.client.side_effect = self._make_clients(
+            apigateway, MagicMock(), MagicMock(), MagicMock()
+        )
+
+        exit_code = main()
+
+        self.assertEqual(exit_code, 1)
+
+    @patch("scripts.reconcile_deploy_env.boto3")
+    @patch.dict(os.environ, ENV, clear=True)
+    def test_skips_cold_start_when_cors_already_up_to_date(self, mock_boto3):
+        apigateway = MagicMock()
+        apigateway.get_rest_apis.return_value = {
+            "items": [{"id": "abc123", "name": "gym-tracker-dev"}]
+        }
+
+        amplify = MagicMock()
+        amplify.get_branch.return_value = {
+            "branch": {
+                "branchName": "main",
+                "environmentVariables": {
+                    "VITE_API_URL": "https://abc123.execute-api.us-east-1.amazonaws.com/dev/api"
+                },
+            }
+        }
+        amplify.get_app.return_value = {
+            "app": {"defaultDomain": "app-id.amplifyapp.com"}
+        }
+
+        ssm = MagicMock()
+        ssm.get_parameter.return_value = {
+            "Parameter": {
+                "Value": "https://main.app-id.amplifyapp.com",
+                "Type": "String",
+            }
+        }
+
+        lambda_client = MagicMock()
+
+        mock_boto3.client.side_effect = self._make_clients(
+            apigateway, amplify, ssm, lambda_client
+        )
+
+        exit_code = main()
+
+        self.assertEqual(exit_code, 0)
+        amplify.update_branch.assert_not_called()
+        ssm.put_parameter.assert_not_called()
+        lambda_client.update_function_configuration.assert_not_called()
 
 
 if __name__ == "__main__":
