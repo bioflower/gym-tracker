@@ -5,17 +5,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$(dirname "$SCRIPT_DIR")"
 DOCKERFILE="$BACKEND_DIR/docker/Dockerfile.lambda-deps"
 IMAGE_NAME="gym-tracker-lambda-deps"
-SITE_PACKAGES="$BACKEND_DIR/.venv/lib/python3.11/site-packages"
-
-if [ ! -d "$BACKEND_DIR/.venv" ]; then
-  echo "ERROR: $BACKEND_DIR/.venv does not exist. Create it first:" >&2
-  echo "  python3.11 -m venv $BACKEND_DIR/.venv && $BACKEND_DIR/.venv/bin/pip install -r $BACKEND_DIR/requirements.txt" >&2
-  exit 1
-fi
+DEPLOY_VENV="$BACKEND_DIR/.venv-lambda"
+SITE_PACKAGES="$DEPLOY_VENV/lib/python3.11/site-packages"
 
 if ! docker info > /dev/null 2>&1; then
   echo "ERROR: Docker is not running or not installed. Start Docker Desktop and try again." >&2
   exit 1
+fi
+
+if [ ! -d "$DEPLOY_VENV" ]; then
+  echo "==> $DEPLOY_VENV does not exist yet, bootstrapping it..."
+  python3.11 -m venv "$DEPLOY_VENV"
+  "$DEPLOY_VENV/bin/pip" install --upgrade pip
+  "$DEPLOY_VENV/bin/pip" install -r "$BACKEND_DIR/requirements.txt"
 fi
 
 echo "==> Building Linux x86_64 dependency image..."
@@ -33,11 +35,11 @@ docker cp "$CONTAINER_ID:/out" "$TMP_DIR/out"
 docker rm "$CONTAINER_ID" > /dev/null
 
 if [ ! -d "$TMP_DIR/out" ] || [ -z "$(ls -A "$TMP_DIR/out")" ]; then
-  echo "ERROR: Docker build produced an empty /out directory. Aborting without touching .venv." >&2
+  echo "ERROR: Docker build produced an empty /out directory. Aborting without touching $DEPLOY_VENV." >&2
   exit 1
 fi
 
-echo "==> Swapping site-packages with Linux-built dependencies..."
+echo "==> Swapping $DEPLOY_VENV's site-packages with Linux-built dependencies..."
 rm -rf "$SITE_PACKAGES"
 mkdir -p "$SITE_PACKAGES"
 cp -R "$TMP_DIR/out/." "$SITE_PACKAGES/"
@@ -57,5 +59,6 @@ fi
 
 echo "OK: $(basename "$PSYCOPG_SO") is a Linux ELF binary."
 echo
-echo "Dependencies rebuilt for Linux x86_64 successfully."
-echo "Next: run 'zappa update dev' (or 'zappa deploy dev') from $BACKEND_DIR."
+echo "Dependencies rebuilt for Linux x86_64 successfully in $DEPLOY_VENV."
+echo "Next: run '$DEPLOY_VENV/bin/zappa update dev' (or 'deploy dev') from $BACKEND_DIR."
+echo "Your regular .venv (dev/tests) was not touched."
