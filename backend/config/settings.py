@@ -22,7 +22,7 @@ remote_config: Dict[str, str] = dict()
 if APP_ENV.startswith("aws-"):
     remote_config: Dict[str, str] = load_aws_parameters()
 
-def get_config(name, str, default: str | None = None) -> str | None:
+def get_config(name: str, default: str | None = None) -> str | None:
     """
     Resolution order:
     1. Process environment variable
