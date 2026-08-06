@@ -25,9 +25,26 @@ remembers to special-case it too.
 
 Rebuild the **entire** `backend/requirements.txt` inside a Docker container
 that matches Lambda's actual runtime (Linux x86_64, Python 3.11), then swap
-the result into the existing dev `.venv`'s `site-packages` before running
-`zappa update`/`deploy` normally on the host. This closes the whole class of
-bug, not just the one package we already found.
+the result into a **dedicated deploy-only virtualenv**'s `site-packages`
+before running `zappa update`/`deploy` normally on the host, from that venv.
+This closes the whole class of bug, not just the one package we already
+found, without affecting the regular dev `.venv` used for local development
+and tests.
+
+> **Amendment (found during implementation of Task 2, before this spec's
+> approval was finalized):** the original design swapped the *existing* dev
+> `.venv` in place. That was verified to be safe for the `zappa` CLI's own
+> import graph, but it missed that this repository's local Django test suite
+> (`manage.py test`) also uses that same venv and connects to a real Postgres
+> database (`DATABASE_URL` in `backend/.env`, not SQLite) — so it imports
+> `psycopg2` directly. `psycopg2` has no pure-Python fallback (unlike
+> `charset_normalizer`/`markupsafe`/`PyYAML`), so after an in-place swap,
+> `manage.py test` fails locally with the same `ImproperlyConfigured` error
+> from the original production incident, until the native macOS dependencies
+> are manually reinstalled. This section and the ones below reflect the
+> corrected design: a **separate** venv used only for packaging/deploying,
+> so the dev `.venv` is never touched and local tests keep working
+> unconditionally.
 
 ## Non-goals
 
@@ -46,12 +63,21 @@ bug, not just the one package we already found.
 ```
 backend/
 ├── docker/
-│   └── Dockerfile.lambda-deps            # NEW — builds Linux x86_64 wheels
+│   └── Dockerfile.lambda-deps                   # NEW — builds Linux x86_64 wheels
 ├── scripts/
-│   └── build_lambda_deps.sh              # NEW — orchestrates build + swap
-├── requirements.txt                      # unchanged, read by the Dockerfile
-└── .venv/lib/python3.11/site-packages/   # swapped in place by the script
+│   └── build_lambda_deps.sh                     # NEW — orchestrates build + swap
+├── requirements.txt                             # unchanged, read by the Dockerfile
+├── .venv/                                       # dev venv — untouched by this script
+└── .venv-lambda/lib/python3.11/site-packages/   # NEW — deploy-only venv, swapped by the script
 ```
+
+`.venv-lambda/` is a second, independent virtualenv used only for
+packaging/deploying via `zappa`. It's bootstrapped normally the first time
+(`python3.11 -m venv .venv-lambda && .venv-lambda/bin/pip install -r
+requirements.txt`, giving it a fully working macOS-native `zappa` CLI, same
+as `.venv`), and its `site-packages` is what gets replaced with the
+Linux-built dependencies. The regular dev `.venv` is never touched by any
+part of this workflow.
 
 ### `docker/Dockerfile.lambda-deps`
 
@@ -92,7 +118,18 @@ Run from `backend/`. Responsibilities, in order:
    get-function-configuration --query Architectures`) — if that ever
    changes, this flag must change too.
 
-2. **Extract `/out`** from the built image into a temp directory on the host,
+2. **Bootstrap `.venv-lambda` if it doesn't exist yet**, exactly like a
+   normal dev venv setup:
+   ```bash
+   python3.11 -m venv .venv-lambda
+   .venv-lambda/bin/pip install --upgrade pip
+   .venv-lambda/bin/pip install -r requirements.txt
+   ```
+   This gives `.venv-lambda` a fully working macOS-native `zappa` CLI (same
+   as `.venv`) before its `site-packages` gets replaced below. If
+   `.venv-lambda` already exists, this step is skipped.
+
+3. **Extract `/out`** from the built image into a temp directory on the host,
    without needing a running container (via `docker create` + `docker cp` +
    `docker rm`):
    ```bash
@@ -101,46 +138,42 @@ Run from `backend/`. Responsibilities, in order:
    docker rm "$cid" > /dev/null
    ```
 
-3. **Swap into the dev venv.** Wipe the contents of
-   `.venv/lib/python3.11/site-packages/` and copy in everything from
-   `$tmp_dir/out`. This is a full replace, not a merge — every dependency
-   comes from the fresh Linux build, no mixing of old macOS and new Linux
-   artifacts for the same package.
+4. **Swap into `.venv-lambda` — never into the dev `.venv`.** Wipe the
+   contents of `.venv-lambda/lib/python3.11/site-packages/` and copy in
+   everything from `$tmp_dir/out`. This is a full replace, not a merge —
+   every dependency comes from the fresh Linux build, no mixing of old
+   macOS and new Linux artifacts for the same package.
 
-   This is safe for locally running `zappa` afterward: the only compiled
-   (`.so`) extensions currently present in the venv belong to `psycopg2`,
-   `charset_normalizer`, `markupsafe`, and `PyYAML`. All three of the latter
-   ship documented pure-Python fallbacks that activate automatically via
-   `try/except ImportError` when the compiled extension can't be loaded on
-   the host OS — so `zappa update` still runs fine locally on macOS after
-   the swap (just without those specific speedups locally). Only `psycopg2`
-   has no pure-Python fallback, but it's never imported during the `zappa`
-   CLI's own packaging process — it's only imported when the *deployed*
-   Lambda code runs, which is Linux, which is exactly what it's now built
-   for.
+   Because this is a dedicated venv never used for local dev or tests, there
+   is no risk of breaking `manage.py test` or any other local Postgres-backed
+   workflow — those continue to use `.venv` (native macOS `psycopg2`),
+   completely unaffected by this script.
 
-4. **Verify.** Assert at least one known compiled package
+5. **Verify.** Assert at least one known compiled package
    (`psycopg2/_psycopg*.so`) is now an ELF binary, not a Mach-O binary:
    ```bash
-   file .venv/lib/python3.11/site-packages/psycopg2/_psycopg*.so
+   file .venv-lambda/lib/python3.11/site-packages/psycopg2/_psycopg*.so
    # must contain "ELF 64-bit"
    ```
    Fail loudly (non-zero exit, clear error message) if this check doesn't
    pass — a bad build must not silently proceed to `zappa update`.
 
-5. **Print next steps** — remind the user to run `zappa update dev` (or
-   `deploy`) manually. The script does not run `zappa` itself, per the
-   design decision to keep AWS credentials out of Docker entirely.
+6. **Print next steps** — remind the user to run `.venv-lambda/bin/zappa
+   update dev` (or `deploy`) manually. The script does not run `zappa`
+   itself, per the design decision to keep AWS credentials out of Docker
+   entirely.
 
 ### Error handling
 
 - If `docker` is not installed/running, fail early with a clear message
   (`docker info` check) before doing anything else.
-- If `docker build` fails, stop — do not touch `.venv`.
-- If the `/out` extraction fails, stop — do not touch `.venv`.
-- Only wipe/replace `.venv/lib/python3.11/site-packages/` after the Docker
-  build and extraction have both fully succeeded, so a failed run leaves the
-  existing (working) venv untouched.
+- If `docker build` fails, stop — do not touch `.venv-lambda`.
+- If the `/out` extraction fails, stop — do not touch `.venv-lambda`.
+- Only wipe/replace `.venv-lambda/lib/python3.11/site-packages/` after the
+  Docker build and extraction have both fully succeeded, so a failed run
+  leaves any existing (working) `.venv-lambda` untouched.
+- The dev `.venv` is never referenced or modified by this script under any
+  circumstance.
 
 ### Testing / manual verification plan
 
@@ -149,10 +182,10 @@ suite), verification is manual:
 
 1. Run `backend/scripts/build_lambda_deps.sh` and confirm it exits 0 with the
    ELF check passing.
-2. Run `python manage.py test` (or the existing Django test workflow) using
-   the now-swapped `.venv` to confirm nothing broke locally (pure-Python
-   fallbacks working as expected).
-3. Run `zappa update dev` and confirm no `502` status-check warning.
+2. Run `python manage.py test` using the **dev `.venv`** (untouched) to
+   confirm local tests are completely unaffected by the script having run.
+3. Run `.venv-lambda/bin/zappa update dev` and confirm no `502` status-check
+   warning.
 4. Cold-start invoke the Lambda directly (per the debugging playbook in
    `Zappa Deployment Gotchas.md`) and confirm the app boots (e.g. `302` on
    `/admin/`), not a crash.
@@ -167,6 +200,6 @@ suite), verification is manual:
 - Whether to document this new step in `Zappa Deployment Gotchas.md`
   (Obsidian) as a follow-up once implemented and verified.
 
-Confirmed during spec review: no `.gitignore` change is needed — `.venv/` is
-already ignored at the repo root (`backend/.venv/`), so no transient build
-artifacts risk being committed.
+Confirmed during spec review: `.gitignore` needs one addition —
+`backend/.venv-lambda/` — alongside the existing `backend/.venv/` entry, so
+the new deploy-only venv is never committed.

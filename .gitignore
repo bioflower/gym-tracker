@@ -3,6 +3,7 @@ dist/
 dist-ssr/
 *.local
 backend/.venv/
+backend/.venv-lambda/
 backend/staticfiles/
 *.pyc
 __pycache__/
