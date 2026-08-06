@@ -132,16 +132,15 @@ def main() -> int:
         return 1
     print(f"Resolved API Gateway URL: {api_url}")
 
-    amplify_changed = reconcile_amplify_env_var(
-        amplify_client, amplify_app_id, amplify_branch, "VITE_API_URL", api_url
-    )
-    print(f"Amplify VITE_API_URL {'updated' if amplify_changed else 'already up to date'}")
-
     try:
+        amplify_changed = reconcile_amplify_env_var(
+            amplify_client, amplify_app_id, amplify_branch, "VITE_API_URL", api_url
+        )
         amplify_url = resolve_amplify_url(amplify_client, amplify_app_id, amplify_branch)
     except ClientError as exc:
         print(f"ERROR: {exc}")
         return 1
+    print(f"Amplify VITE_API_URL {'updated' if amplify_changed else 'already up to date'}")
     print(f"Resolved Amplify URL: {amplify_url}")
 
     cors_changed = reconcile_cors_origins(ssm_client, ssm_parameter_name, amplify_url)

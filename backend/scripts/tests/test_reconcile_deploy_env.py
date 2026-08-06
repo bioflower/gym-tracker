@@ -2,6 +2,8 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
+from botocore.exceptions import ClientError
+
 from scripts.reconcile_deploy_env import (
     force_lambda_cold_start,
     main,
@@ -255,6 +257,28 @@ class MainTests(unittest.TestCase):
 
         mock_boto3.client.side_effect = self._make_clients(
             apigateway, MagicMock(), MagicMock(), MagicMock()
+        )
+
+        exit_code = main()
+
+        self.assertEqual(exit_code, 1)
+
+    @patch("scripts.reconcile_deploy_env.boto3")
+    @patch.dict(os.environ, ENV, clear=True)
+    def test_returns_1_when_amplify_branch_not_found(self, mock_boto3):
+        apigateway = MagicMock()
+        apigateway.get_rest_apis.return_value = {
+            "items": [{"id": "abc123", "name": "gym-tracker-dev"}]
+        }
+
+        amplify = MagicMock()
+        amplify.get_branch.side_effect = ClientError(
+            {"Error": {"Code": "NotFoundException", "Message": "Branch not found"}},
+            "GetBranch",
+        )
+
+        mock_boto3.client.side_effect = self._make_clients(
+            apigateway, amplify, MagicMock(), MagicMock()
         )
 
         exit_code = main()
