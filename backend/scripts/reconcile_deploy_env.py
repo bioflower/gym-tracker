@@ -80,9 +80,16 @@ def reconcile_cors_origins(
     there. Preserves the parameter's original Type (e.g. SecureString) on
     write. Returns True if a write was made.
     """
-    parameter = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)[
-        "Parameter"
-    ]
+    try:
+        parameter = ssm_client.get_parameter(
+            Name=parameter_name, WithDecryption=True
+        )["Parameter"]
+    except ClientError as exc:
+        code = exc.response.get("Error", {}).get("Code")
+        if code != "ParameterNotFound":
+            raise
+        parameter = {"Value": "", "Type": "String"}
+
     origins = [origin.strip() for origin in parameter["Value"].split(",") if origin.strip()]
 
     if origin_to_ensure in origins:

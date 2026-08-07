@@ -182,6 +182,32 @@ class ReconcileCorsOriginsTests(unittest.TestCase):
             Overwrite=True,
         )
 
+    def test_creates_parameter_when_missing(self):
+        client = MagicMock()
+        not_found = ClientError(
+            {
+                "Error": {
+                    "Code": "ParameterNotFound",
+                    "Message": "Parameter not found",
+                }
+            },
+            "GetParameter",
+        )
+        client.get_parameter.side_effect = not_found
+
+        changed = reconcile_cors_origins(
+            client, "/gym-tracker/dev/CORS_ALLOWED_ORIGINS",
+            "https://main.example.amplifyapp.com",
+        )
+
+        self.assertTrue(changed)
+        client.put_parameter.assert_called_once_with(
+            Name="/gym-tracker/dev/CORS_ALLOWED_ORIGINS",
+            Value="https://main.example.amplifyapp.com",
+            Type="String",
+            Overwrite=True,
+        )
+
 
 class ForceLambdaColdStartTests(unittest.TestCase):
     def test_updates_function_description_with_force_cold_prefix(self):
