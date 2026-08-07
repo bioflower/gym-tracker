@@ -1,0 +1,9 @@
+# Builds backend/requirements.txt for Lambda's actual runtime (Linux x86_64,
+# Python 3.11), so locally-built macOS/arm64 wheels never get zipped and
+# shipped to Lambda by mistake. See docs/superpowers/specs/2026-08-06-docker-lambda-deps-design.md
+FROM public.ecr.aws/sam/build-python3.11
+
+COPY requirements.txt /tmp/requirements.txt
+
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir --target /out -r /tmp/requirements.txt
