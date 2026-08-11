@@ -1,4 +1,5 @@
 const SYNC_QUEUE_KEY = 'gym-tracker-sync-queue';
+const SYNC_RETRY_INTERVAL_MS = 15000;
 
 interface SyncQueueItem {
   id: string;
@@ -49,7 +50,17 @@ export async function processQueue(): Promise<void> {
 }
 
 export function setupSyncListener(): () => void {
-  const handler = () => { if (navigator.onLine) processQueue(); };
-  window.addEventListener('online', handler);
-  return () => window.removeEventListener('online', handler);
+  const flush = () => {
+    if (navigator.onLine) {
+      void processQueue();
+    }
+  };
+  // Flush anything queued while offline the moment the app starts (or comes online).
+  flush();
+  const id = window.setInterval(flush, SYNC_RETRY_INTERVAL_MS);
+  window.addEventListener('online', flush);
+  return () => {
+    window.clearInterval(id);
+    window.removeEventListener('online', flush);
+  };
 }
