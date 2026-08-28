@@ -130,7 +130,7 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 CORS_ALLOWED_ORIGINS = [
-    origin.strip() for origin in os.environ.get(
+    origin.strip() for origin in get_config(
         "CORS_ALLOWED_ORIGINS",
         "http://localhost:5173"
     ).split(",") if origin.strip()
