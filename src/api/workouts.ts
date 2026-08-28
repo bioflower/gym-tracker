@@ -1,8 +1,29 @@
 import { apiRequest } from './client';
 import type { Exercise, WorkoutDay, WorkoutSession } from '../types/gym';
 
+interface ServerExercise {
+  id: string;
+  name: string;
+  category: Exercise['category'];
+  tracking_type: Exercise['trackingType'];
+  equipment?: string;
+  is_preset: boolean;
+}
+
+function toExercise(raw: ServerExercise): Exercise {
+  return {
+    id: raw.id,
+    name: raw.name,
+    category: raw.category,
+    trackingType: raw.tracking_type,
+    equipment: raw.equipment,
+    isPreset: raw.is_preset,
+  };
+}
+
 export async function fetchExercises(): Promise<Exercise[]> {
-  return apiRequest<Exercise[]>('/workouts/exercises/');
+  const raw = await apiRequest<ServerExercise[]>('/workouts/exercises/');
+  return raw.map(toExercise);
 }
 
 export async function createExercise(data: Partial<Exercise>): Promise<Exercise> {
