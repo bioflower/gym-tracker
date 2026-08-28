@@ -7,7 +7,6 @@ import { loadAppData, saveAppData, clearAppData, getDefaultAppData } from '../ut
 import { advanceWorkout, getCurrentWorkout } from '../utils/rotation';
 import { generateId } from '../utils/validation';
 import { getTodayISO, nowISO } from '../utils/dateTime';
-import { presetExercises } from '../data/presetExercises';
 import * as workouts from '../api/workouts';
 import { isOnline, enqueue, setupSyncListener } from '../api/sync';
 
@@ -35,9 +34,11 @@ export function useGymTracker() {
         workouts.fetchPlan(),
         workouts.fetchSessions(),
       ]);
+      const presetExercises = exercises.filter(e => e.isPreset);
       const customExercises = exercises.filter(e => !e.isPreset);
       setData(prev => ({
         ...prev,
+        presetExercises,
         customExercises,
         workoutPlan: plan,
         workoutHistory: sessions,
@@ -68,16 +69,16 @@ export function useGymTracker() {
   const startWorkout = useCallback(() => {
     const workout = getCurrentWorkout(data.workoutPlan, data.currentWorkoutIndex);
     if (!workout) return;
-    const allExercises: Exercise[] = [...presetExercises, ...data.customExercises];
+    const allExercises: Exercise[] = [...data.presetExercises, ...data.customExercises];
     const exercises: ActiveExercise[] = workout.exercises.map(pe => {
-      const exerciseDef = allExercises.find(e => e.id === pe.exerciseId);
+      const exerciseDef = allExercises.find(e => e.id === pe.exercise);
       return {
         id: generateId(),
-        exerciseId: pe.exerciseId,
+        exerciseId: pe.exercise,
         exerciseName: exerciseDef?.name ?? 'Unknown',
         trackingType: exerciseDef?.trackingType ?? ('reps' as const),
-        sets: createEmptySets(exerciseDef?.trackingType ?? 'reps', pe.targetSets),
-        notes: pe.notes ?? '',
+        sets: createEmptySets(exerciseDef?.trackingType ?? 'reps', pe.target_sets),
+        notes: '',
         startedAt: null,
         completedAt: null,
         completed: false,
@@ -94,7 +95,7 @@ export function useGymTracker() {
       exercises,
     };
     setData(prev => ({ ...prev, activeWorkout: session }));
-  }, [data.workoutPlan, data.currentWorkoutIndex, data.customExercises, createEmptySets]);
+  }, [data.workoutPlan, data.currentWorkoutIndex, data.customExercises, data.presetExercises, createEmptySets]);
 
   const getCurrentWorkoutDay = useCallback((): WorkoutDay | null => {
     return getCurrentWorkout(data.workoutPlan, data.currentWorkoutIndex);
@@ -311,8 +312,8 @@ export function useGymTracker() {
   }, [data.workoutPlan, data.currentWorkoutIndex]);
 
   const getAllExercises = useCallback((): Exercise[] => {
-    return [...presetExercises, ...data.customExercises];
-  }, [data.customExercises]);
+    return [...data.presetExercises, ...data.customExercises];
+  }, [data.presetExercises, data.customExercises]);
 
   return {
     data,
