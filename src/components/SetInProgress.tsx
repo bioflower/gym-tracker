@@ -1,4 +1,4 @@
-import type { ExerciseSet, TrackingType, WeightRepSet, WeightUnit } from '../types/gym';
+import type { ExerciseSet, TrackingType, WeightRepSet, WeightUnit, RepsOnlySet, DistanceDurationSet, DistanceUnit } from '../types/gym';
 import { diffSeconds } from '../utils/dateTime';
 import { LiveTimer } from './LiveTimer';
 
@@ -101,7 +101,7 @@ function renderWeightRepsInput(
 }
 
 function renderRepsInput(set: ExerciseSet, onUpdate: (id: string, u: Partial<ExerciseSet>) => void) {
-  const s = set as { id: string; reps: number | null };
+  const s = set as RepsOnlySet;
   return (
     <div className="set-input-group">
       <label htmlFor={`reps-${s.id}`} className="sr-only">Reps</label>
@@ -118,7 +118,7 @@ function renderRepsInput(set: ExerciseSet, onUpdate: (id: string, u: Partial<Exe
 }
 
 function renderDistanceInput(set: ExerciseSet, onUpdate: (id: string, u: Partial<ExerciseSet>) => void) {
-  const s = set as { id: string; distance: number | null; distanceUnit: 'km' | 'm' | 'mi' };
+  const s = set as DistanceDurationSet;
   return (
     <div className="set-input-group">
       <label htmlFor={`dist-${s.id}`} className="sr-only">Distance</label>
@@ -132,7 +132,7 @@ function renderDistanceInput(set: ExerciseSet, onUpdate: (id: string, u: Partial
       />
       <select
         className="input input-small input-unit" value={s.distanceUnit}
-        onChange={e => onUpdate(s.id, { distanceUnit: e.target.value as 'km' | 'm' | 'mi' })}
+        onChange={e => onUpdate(s.id, { distanceUnit: e.target.value as DistanceUnit })}
         aria-label="Distance unit"
       >
         <option value="km">km</option><option value="m">m</option><option value="mi">mi</option>
