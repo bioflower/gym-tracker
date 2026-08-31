@@ -45,6 +45,26 @@ describe('ExerciseCard', () => {
     expect(screen.getByText('Not Started')).toBeInTheDocument();
   });
 
+  it('does not start a timer when the exercise header is clicked', () => {
+    const onAddSet = vi.fn();
+    renderCard(makeExercise(), { onAddSet });
+    fireEvent.click(document.querySelector('.exercise-card-header')!);
+    expect(onAddSet).not.toHaveBeenCalled();
+    expect(screen.getByText('Start')).toBeInTheDocument();
+    expect(document.querySelector('.live-timer')).not.toBeInTheDocument();
+  });
+
+  it('shows Start, not a running timer, when sets exist but have not been started', () => {
+    const exercise = makeExercise({
+      sets: [{ id: 'set-1', weight: null, weightUnit: 'kg', reps: null, startedAt: null, completedAt: null, completed: false }],
+    });
+    renderCard(exercise);
+    fireEvent.click(document.querySelector('.exercise-card-header')!);
+    expect(screen.getByText('Start')).toBeInTheDocument();
+    expect(screen.queryByText('Stop')).not.toBeInTheDocument();
+    expect(document.querySelector('.live-timer')).not.toBeInTheDocument();
+  });
+
   it('shows the active timer and Stop button, and In Progress badge, once a set is in progress', () => {
     const exercise = makeExercise({
       startedAt: '2026-01-01T00:00:00.000Z',

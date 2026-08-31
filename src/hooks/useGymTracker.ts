@@ -203,6 +203,14 @@ export function useGymTracker() {
           ...prev.activeWorkout,
           exercises: prev.activeWorkout.exercises.map(e => {
             if (e.id !== exerciseId) return e;
+            const unstarted = e.sets.find(s => !s.completed && !s.startedAt);
+            if (unstarted) {
+              return {
+                ...e,
+                startedAt: e.startedAt ?? now,
+                sets: e.sets.map(s => s.id === unstarted.id ? { ...s, startedAt: now } : s),
+              };
+            }
             const newSet = { ...createEmptySets(e.trackingType, 1)[0], startedAt: now };
             return { ...e, startedAt: e.startedAt ?? now, sets: [...e.sets, newSet] };
           }),

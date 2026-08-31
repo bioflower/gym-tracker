@@ -29,7 +29,7 @@ export function SetInProgress({
     return (
       <div className="current-set-card">
         <span className="set-label">Set {setIndex + 1}</span>
-        <LiveTimer startAt={set.startedAt!} />
+        {set.startedAt && <LiveTimer startAt={set.startedAt} />}
         <button className="btn btn-primary btn-small" onClick={() => handleStop(set, trackingType, onUpdate)}>
           Stop
         </button>

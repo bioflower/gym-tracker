@@ -27,7 +27,7 @@ export function ExerciseCard({
   const defaultWeightUnit = lastPreviousSet?.type === 'weight-reps' ? (lastPreviousSet.weightUnit ?? 'kg') : 'kg';
 
   const completedSets = exercise.sets.filter(s => s.completed);
-  const activeSet = exercise.sets.find(s => !s.completed) ?? null;
+  const activeSet = exercise.sets.find(s => !s.completed && s.startedAt) ?? null;
   const lastCompletedSet = completedSets.length > 0 ? completedSets[completedSets.length - 1] : null;
 
   return (
