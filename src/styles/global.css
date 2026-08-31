@@ -167,6 +167,51 @@ a {
   flex-wrap: wrap;
 }
 
+/* Current set / rest / swap */
+.current-set-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  flex-wrap: wrap;
+}
+
+.rest-timer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+}
+
+.rest-timer-label { font-weight: 600; color: var(--text-secondary); }
+
+.live-timer { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.completed-set-row { border-bottom: 1px solid var(--border); }
+
+.completed-set-summary {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: var(--space-xs) 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+.completed-set-edit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  padding: var(--space-xs) 0 var(--space-sm);
+}
+
+.exercise-swap-select { margin-bottom: var(--space-sm); }
+
 .set-label {
   min-width: 40px;
   font-size: 0.85rem;
