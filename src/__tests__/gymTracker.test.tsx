@@ -5,6 +5,7 @@ import { type ReactNode } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Navigation } from '../components/Navigation';
 import { TodayPage } from '../pages/TodayPage';
+import { BUTTON_LABELS } from '../constants/workout';
 
 vi.mock('../api/sync', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api/sync')>();
@@ -77,7 +78,7 @@ describe('Gym Tracker', () => {
         });
       }
       await act(async () => {
-        fireEvent.click(scoped.getByText('Mark exercise done'));
+        fireEvent.click(scoped.getByText(BUTTON_LABELS.COMPLETE_EXERCISE));
       });
     }
 

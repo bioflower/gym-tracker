@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ExerciseCard } from '../components/ExerciseCard';
 import type { ActiveExercise, Exercise } from '../types/gym';
+import { BUTTON_LABELS } from '../constants/workout';
 
 const exerciseDef: Exercise = { id: 'ex-1', name: 'Bench Press', category: 'chest', trackingType: 'weight-reps', isPreset: true };
 const otherDef: Exercise = { id: 'ex-2', name: 'Push-up', category: 'chest', trackingType: 'reps', isPreset: true };
@@ -76,6 +77,22 @@ describe('ExerciseCard', () => {
     expect(screen.getByText('In Progress')).toBeInTheDocument();
   });
 
+  it('labels the in-progress set as Set 1 even when placeholder sets already exist', () => {
+    const empty = { weight: null as number | null, weightUnit: 'kg' as const, reps: null as number | null, completedAt: null, completed: false };
+    const exercise = makeExercise({
+      startedAt: '2026-01-01T00:00:00.000Z',
+      sets: [
+        { id: 'set-1', ...empty, startedAt: '2026-01-01T00:00:00.000Z' },
+        { id: 'set-2', ...empty, startedAt: null },
+        { id: 'set-3', ...empty, startedAt: null },
+      ],
+    });
+    renderCard(exercise);
+    fireEvent.click(document.querySelector('.exercise-card-header')!);
+    expect(screen.getByText('Set 1')).toBeInTheDocument();
+    expect(screen.queryByText('Set 3')).not.toBeInTheDocument();
+  });
+
   it('shows a rest timer and "Mark exercise done" link once a set has been completed', () => {
     const exercise = makeExercise({
       startedAt: '2026-01-01T00:00:00.000Z',
@@ -84,8 +101,8 @@ describe('ExerciseCard', () => {
     renderCard(exercise);
     fireEvent.click(document.querySelector('.exercise-card-header')!);
     expect(screen.getByText('Rest')).toBeInTheDocument();
-    expect(screen.getByText('Start Next Set')).toBeInTheDocument();
-    expect(screen.getByText('Mark exercise done')).toBeInTheDocument();
+    expect(screen.getByText(BUTTON_LABELS.START_NEXT_SET)).toBeInTheDocument();
+    expect(screen.getByText(BUTTON_LABELS.COMPLETE_EXERCISE)).toBeInTheDocument();
     expect(screen.getByText('80 kg × 8 reps')).toBeInTheDocument();
   });
 
@@ -96,7 +113,7 @@ describe('ExerciseCard', () => {
     });
     renderCard(exercise, { onSetDone });
     fireEvent.click(document.querySelector('.exercise-card-header')!);
-    fireEvent.click(screen.getByText('Mark exercise done'));
+    fireEvent.click(screen.getByText(BUTTON_LABELS.COMPLETE_EXERCISE));
     expect(onSetDone).toHaveBeenCalledWith(true);
   });
 
@@ -107,8 +124,8 @@ describe('ExerciseCard', () => {
     });
     renderCard(exercise);
     fireEvent.click(document.querySelector('.exercise-card-header')!);
-    expect(screen.getByText('Done')).toBeInTheDocument();
-    expect(screen.getByText('Resume / log another set')).toBeInTheDocument();
+    expect(screen.getByText(BUTTON_LABELS.COMPLETE_EXERCISE)).toBeInTheDocument();
+    expect(screen.getByText(BUTTON_LABELS.RESUME_EXERCISE)).toBeInTheDocument();
     expect(screen.queryByLabelText('Change exercise')).not.toBeInTheDocument();
   });
 

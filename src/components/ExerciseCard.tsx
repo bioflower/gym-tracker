@@ -5,6 +5,7 @@ import { SetInProgress } from './SetInProgress';
 import { RestTimer } from './RestTimer';
 import { ExerciseSwapControl } from './ExerciseSwapControl';
 import { findMostRecentExerciseResult } from '../utils/exerciseHistory';
+import { BUTTON_LABELS } from '../constants/workout';
 
 interface ExerciseCardProps {
   exercise: ActiveExercise;
@@ -82,7 +83,7 @@ export function ExerciseCard({
           </div>
           {exercise.completed ? (
             <button className="btn btn-small btn-outline" onClick={() => onSetDone(false)}>
-              Resume / log another set
+              {BUTTON_LABELS.RESUME_EXERCISE}
             </button>
           ) : (
             <>
@@ -91,15 +92,32 @@ export function ExerciseCard({
                   mode={activeSet.completedAt ? 'awaiting-input' : 'active'}
                   set={activeSet}
                   trackingType={exercise.trackingType}
-                  setIndex={exercise.sets.length - 1}
+                  setIndex={exercise.sets.findIndex(s => s.id === activeSet.id)}
                   defaultWeight={defaultWeight}
                   defaultWeightUnit={defaultWeightUnit}
                   onStart={onAddSet}
                   onUpdate={onUpdateSet}
                 />
               ) : lastCompletedSet ? (
-                <RestTimer previousCompletedAt={lastCompletedSet.completedAt!} onStartNext={onAddSet} />
-              ) : (
+                <>
+                  <RestTimer previousCompletedAt={lastCompletedSet.completedAt!} />
+                  <div className='exercise-actions'>
+                    <button 
+                      className='btn btn-primary btn-small'
+                      onClick={onAddSet}
+                    >
+                      {BUTTON_LABELS.START_NEXT_SET}
+                    </button>
+
+                    <button
+                      className='btn btn-success btn-small'
+                      onClick={() => onSetDone(true)}
+                    >
+                      {BUTTON_LABELS.COMPLETE_EXERCISE}
+                    </button>
+                  </div>
+                </>
+              ): (
                 <SetInProgress
                   mode="idle"
                   set={null}
@@ -110,11 +128,6 @@ export function ExerciseCard({
                   onStart={onAddSet}
                   onUpdate={onUpdateSet}
                 />
-              )}
-              {completedSets.length > 0 && (
-                <button className="btn btn-small btn-success" onClick={() => onSetDone(true)}>
-                  Mark exercise done
-                </button>
               )}
             </>
           )}

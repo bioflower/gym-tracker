@@ -5,6 +5,7 @@ import { type ReactNode } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Navigation } from '../components/Navigation';
 import { TodayPage } from '../pages/TodayPage';
+import { BUTTON_LABELS } from '../constants/workout';
 
 vi.mock('../api/sync', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api/sync')>();
@@ -85,9 +86,9 @@ describe('useGymTracker actions', () => {
       fireEvent.change(firstCard.getByPlaceholderText('Reps'), { target: { value: '10' } });
     });
     await act(async () => {
-      fireEvent.click(firstCard.getByText('Mark exercise done'));
+      fireEvent.click(firstCard.getByText(BUTTON_LABELS.COMPLETE_EXERCISE));
     });
-    expect(firstCard.getByText('Resume / log another set')).toBeInTheDocument();
+    expect(firstCard.getByText(BUTTON_LABELS.RESUME_EXERCISE)).toBeInTheDocument();
   });
 
   it('swaps today\'s exercise before any set is logged, without touching the saved plan', async () => {

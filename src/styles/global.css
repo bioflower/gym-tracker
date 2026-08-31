@@ -143,6 +143,16 @@ a {
   padding: 0 var(--space-md) var(--space-md);
 }
 
+.exercise-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.exercise-actions .btn {
+  flex: 1;
+}
+
 /* Badges */
 .badge {
   display: inline-block;
@@ -174,6 +184,10 @@ a {
   gap: var(--space-sm);
   padding: var(--space-sm) 0;
   flex-wrap: wrap;
+}
+
+.stop-button {
+  margin-left: auto;
 }
 
 .rest-timer {

@@ -1,6 +1,7 @@
 import type { ExerciseSet, TrackingType, WeightRepSet, WeightUnit, RepsOnlySet, DistanceDurationSet, DistanceUnit } from '../types/gym';
 import { diffSeconds } from '../utils/dateTime';
 import { LiveTimer } from './LiveTimer';
+import { BUTTON_LABELS } from '../constants/workout';
 
 interface SetInProgressProps {
   mode: 'idle' | 'active' | 'awaiting-input';
@@ -30,8 +31,8 @@ export function SetInProgress({
       <div className="current-set-card">
         <span className="set-label">Set {setIndex + 1}</span>
         {set.startedAt && <LiveTimer startAt={set.startedAt} />}
-        <button className="btn btn-primary btn-small" onClick={() => handleStop(set, trackingType, onUpdate)}>
-          Stop
+        <button className="btn btn-primary btn-small stop-button" onClick={() => handleStop(set, trackingType, onUpdate)}>
+          {BUTTON_LABELS.STOP_SET}
         </button>
       </div>
     );
