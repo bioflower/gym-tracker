@@ -42,7 +42,7 @@ export function CompletedSetRow({ set, trackingType, setIndex, onUpdate, onRemov
   );
 }
 
-export function summarizeSet(set: ExerciseSet, trackingType: TrackingType): string {
+function summarizeSet(set: ExerciseSet, trackingType: TrackingType): string {
   if (trackingType === 'weight-reps') {
     const s = set as WeightRepSet;
     return `${s.weight ?? '--'} ${s.weightUnit} × ${s.reps ?? '--'} reps`;
