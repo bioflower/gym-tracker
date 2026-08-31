@@ -42,3 +42,14 @@ export function getTodayISO(): string {
 export function nowISO(): string {
   return new Date().toISOString();
 }
+
+export function diffSeconds(start: string, end: string): number {
+  const diff = Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 1000);
+  return Math.max(0, diff);
+}
+
+export function formatClock(totalSeconds: number): string {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { formatDate, getTodayISO } from '../utils/dateTime';
+import { formatDate, getTodayISO, diffSeconds, formatClock } from '../utils/dateTime';
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -52,5 +52,29 @@ describe('formatDate', () => {
     expect(result).toContain('Mar');
     expect(result).toContain('5');
     expect(result).toContain('2026');
+  });
+});
+
+describe('diffSeconds', () => {
+  it('returns whole seconds between two ISO timestamps', () => {
+    expect(diffSeconds('2026-01-01T00:00:00.000Z', '2026-01-01T00:01:32.000Z')).toBe(92);
+  });
+
+  it('clamps negative differences to 0', () => {
+    expect(diffSeconds('2026-01-01T00:01:00.000Z', '2026-01-01T00:00:00.000Z')).toBe(0);
+  });
+});
+
+describe('formatClock', () => {
+  it('formats seconds under a minute', () => {
+    expect(formatClock(5)).toBe('0:05');
+  });
+
+  it('formats minutes and seconds, zero-padded', () => {
+    expect(formatClock(92)).toBe('1:32');
+  });
+
+  it('formats exactly zero', () => {
+    expect(formatClock(0)).toBe('0:00');
   });
 });
