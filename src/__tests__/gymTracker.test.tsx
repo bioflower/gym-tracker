@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { type ReactNode } from 'react';
@@ -57,19 +57,30 @@ describe('Gym Tracker', () => {
     await act(async () => {
       fireEvent.click(screen.getByText('Start Workout'));
     });
-    const exerciseHeaders = document.querySelectorAll('.exercise-card-header');
-    exerciseHeaders.forEach(header => {
+    document.querySelectorAll('.exercise-card-header').forEach(header => {
       fireEvent.click(header);
     });
-    const startButtons = screen.getAllByText('Start');
-    for (const btn of startButtons) {
+
+    const cards = Array.from(document.querySelectorAll('.exercise-card-body'));
+    for (const card of cards) {
+      const scoped = within(card as HTMLElement);
+      for (let setNum = 0; setNum < 3; setNum++) {
+        const startLabel = setNum === 0 ? 'Start' : 'Start Next Set';
+        await act(async () => {
+          fireEvent.click(scoped.getByText(startLabel));
+        });
+        await act(async () => {
+          fireEvent.click(scoped.getByText('Stop'));
+        });
+        await act(async () => {
+          fireEvent.change(scoped.getByPlaceholderText('Reps'), { target: { value: '10' } });
+        });
+      }
       await act(async () => {
-        fireEvent.click(btn);
-      });
-      await act(async () => {
-        fireEvent.click(screen.getByText('Mark Done'));
+        fireEvent.click(scoped.getByText('Mark exercise done'));
       });
     }
+
     await act(async () => {
       fireEvent.click(screen.getByText('Finish Workout'));
     });
