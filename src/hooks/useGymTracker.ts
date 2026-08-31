@@ -77,7 +77,7 @@ export function useGymTracker() {
         exerciseId: pe.exercise,
         exerciseName: exerciseDef?.name ?? 'Unknown',
         trackingType: exerciseDef?.trackingType ?? ('reps' as const),
-        sets: createEmptySets(exerciseDef?.trackingType ?? 'reps', pe.target_sets),
+        sets: [],
         notes: '',
         startedAt: null,
         completedAt: null,
@@ -95,7 +95,7 @@ export function useGymTracker() {
       exercises,
     };
     setData(prev => ({ ...prev, activeWorkout: session }));
-  }, [data.workoutPlan, data.currentWorkoutIndex, data.customExercises, data.presetExercises, createEmptySets]);
+  }, [data.workoutPlan, data.currentWorkoutIndex, data.customExercises, data.presetExercises]);
 
   const getCurrentWorkoutDay = useCallback((): WorkoutDay | null => {
     return getCurrentWorkout(data.workoutPlan, data.currentWorkoutIndex);
@@ -196,14 +196,15 @@ export function useGymTracker() {
   const addSet = useCallback((exerciseId: string) => {
     setData(prev => {
       if (!prev.activeWorkout) return prev;
+      const now = nowISO();
       return {
         ...prev,
         activeWorkout: {
           ...prev.activeWorkout,
           exercises: prev.activeWorkout.exercises.map(e => {
             if (e.id !== exerciseId) return e;
-            const newSet = createEmptySets(e.trackingType, 1)[0];
-            return { ...e, sets: [...e.sets, newSet] };
+            const newSet = { ...createEmptySets(e.trackingType, 1)[0], startedAt: now };
+            return { ...e, startedAt: e.startedAt ?? now, sets: [...e.sets, newSet] };
           }),
         },
       };
@@ -227,7 +228,7 @@ export function useGymTracker() {
     });
   }, []);
 
-  const startExercise = useCallback((exerciseId: string) => {
+  const setExerciseDone = useCallback((exerciseId: string, done: boolean) => {
     setData(prev => {
       if (!prev.activeWorkout) return prev;
       return {
@@ -235,27 +236,36 @@ export function useGymTracker() {
         activeWorkout: {
           ...prev.activeWorkout,
           exercises: prev.activeWorkout.exercises.map(e =>
-            e.id === exerciseId && !e.startedAt
-              ? { ...e, startedAt: nowISO(), completed: false }
-              : e
+            e.id === exerciseId ? { ...e, completed: done, completedAt: done ? nowISO() : null } : e
           ),
         },
       };
     });
   }, []);
 
-  const completeExercise = useCallback((exerciseId: string) => {
+  const swapExerciseForToday = useCallback((exerciseId: string, newExerciseId: string) => {
     setData(prev => {
       if (!prev.activeWorkout) return prev;
+      const allExercises = [...prev.presetExercises, ...prev.customExercises];
+      const newExerciseDef = allExercises.find(e => e.id === newExerciseId);
+      if (!newExerciseDef) return prev;
       return {
         ...prev,
         activeWorkout: {
           ...prev.activeWorkout,
-          exercises: prev.activeWorkout.exercises.map(e =>
-            e.id === exerciseId
-              ? { ...e, completedAt: nowISO(), completed: true }
-              : e
-          ),
+          exercises: prev.activeWorkout.exercises.map(e => {
+            if (e.id !== exerciseId || e.sets.length > 0) return e;
+            return {
+              ...e,
+              exerciseId: newExerciseDef.id,
+              exerciseName: newExerciseDef.name,
+              trackingType: newExerciseDef.trackingType,
+              sets: [],
+              completed: false,
+              startedAt: null,
+              completedAt: null,
+            };
+          }),
         },
       };
     });
@@ -324,8 +334,8 @@ export function useGymTracker() {
     updateSet,
     addSet,
     removeSet,
-    startExercise,
-    completeExercise,
+    setExerciseDone,
+    swapExerciseForToday,
     addCustomExercise,
     editCustomExercise,
     removeCustomExercise,
