@@ -2,12 +2,35 @@ import type { WorkoutSession, CompletedExercise, ActiveExercise, TrackingType, C
 
 export function findMostRecentExerciseResult(
   history: WorkoutSession[],
-  exerciseId: string
+  exerciseId: string,
+  exerciseName?: string
 ): CompletedExercise | null {
-  for (const session of history) {
+  // Ensure history is examined newest-first even if caller passed unsorted data.
+  // Sort by date descending, then completedAt descending as tiebreaker.
+  const sorted = [...history].sort((a, b) => {
+    const dateCmp = b.date.localeCompare(a.date);
+    if (dateCmp !== 0) return dateCmp;
+    return (b.completedAt ?? '').localeCompare(a.completedAt ?? '');
+  });
+
+  const normalizedName = exerciseName?.toLowerCase().trim() ?? null;
+
+  for (const session of sorted) {
     if (session.status !== 'completed') continue;
-    const exercise = session.exercises.find(e => e.exerciseId === exerciseId);
-    if (exercise) return exercise;
+
+    // Primary: exact exerciseId match (handles preset UUIDs correctly)
+    const byId = session.exercises.find(e => e.exerciseId === exerciseId);
+    if (byId) return byId;
+
+    // Fallback: match by exerciseName (case-insensitive)
+    // This covers cases where the same logical exercise has different UUIDs
+    // between local import and server (custom exercises created via upload).
+    if (normalizedName) {
+      const byName = session.exercises.find(
+        e => e.exerciseName.toLowerCase().trim() === normalizedName
+      );
+      if (byName) return byName;
+    }
   }
   return null;
 }
