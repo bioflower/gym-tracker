@@ -48,7 +48,13 @@ export function convertActiveToCompletedExercise(active: ActiveExercise): Comple
 }
 
 function convertSet(set: ExerciseSet, trackingType: TrackingType): CompletedSet {
-  const base: CompletedSet = { id: set.id, type: trackingType };
+  const base: CompletedSet = {
+    id: set.id,
+    type: trackingType,
+    startedAt: set.startedAt,
+    completedAt: set.completedAt,
+    completed: set.completed,
+  };
   if (trackingType === 'weight-reps') {
     const ws = set as { weight: number | null; weightUnit: 'kg' | 'lb'; reps: number | null };
     return { ...base, weight: ws.weight, weightUnit: ws.weightUnit, reps: ws.reps };

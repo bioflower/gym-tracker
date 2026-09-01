@@ -136,6 +136,8 @@ export function useGymTracker() {
         exercise: e.exerciseId,
         exercise_name: e.exerciseName,
         tracking_type: e.trackingType,
+        started_at: e.startedAt,
+        completed_at: e.completedAt,
         sets: e.sets.map(s => ({
           type: e.trackingType,
           weight: 'weight' in s ? s.weight : null,
