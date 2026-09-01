@@ -67,9 +67,12 @@ const PRESET_MAP: Record<string, { id: string; name: string; trackingType: Compl
   // Lower body
   'db deadlift':            { id: '0a1b2c3d-0001-4000-8000-000000000001', name: 'Dumbbell Deadlift',      trackingType: 'weight-reps' },
   'dumbbell deadlift':      { id: '0a1b2c3d-0001-4000-8000-000000000001', name: 'Dumbbell Deadlift',      trackingType: 'weight-reps' },
+  'bb deadlift': {id: '9226f74f-8c3f-43e5-b789-2829be6d2344', name: 'Barbell Deadlift', trackingType: 'weight-reps'},
+  'hip abductor': {id: '16a24225-bb6b-41f9-9d87-7630ab9ca8d9', name: 'Hip Abductor', trackingType: 'weight-reps'},
   'db goblet squat':        { id: '0a1b2c3d-0001-4000-8000-000000000002', name: 'Goblet Squat',           trackingType: 'weight-reps' },
   'goblet squat':           { id: '0a1b2c3d-0001-4000-8000-000000000002', name: 'Goblet Squat',           trackingType: 'weight-reps' },
   'db lunge':               { id: '0a1b2c3d-0001-4000-8000-000000000003', name: 'Dumbbell Lunge',         trackingType: 'weight-reps' },
+  'bb lunge': {id: '6f64f3f3-6190-44de-bca2-079a108358b0', name: 'Barbell Lunge', trackingType: 'weight-reps'}, 
   'dumbbell lunge':         { id: '0a1b2c3d-0001-4000-8000-000000000003', name: 'Dumbbell Lunge',         trackingType: 'weight-reps' },
   'db romanian deadlift':   { id: '0a1b2c3d-0001-4000-8000-000000000004', name: 'Romanian Deadlift',      trackingType: 'weight-reps' },
   'romanian deadlift':      { id: '0a1b2c3d-0001-4000-8000-000000000004', name: 'Romanian Deadlift',      trackingType: 'weight-reps' },
@@ -77,7 +80,10 @@ const PRESET_MAP: Record<string, { id: string; name: string; trackingType: Compl
   'barbell squat':          { id: '0a1b2c3d-0001-4000-8000-000000000005', name: 'Barbell Squat',          trackingType: 'weight-reps' },
   'leg press':              { id: '0a1b2c3d-0001-4000-8000-000000000006', name: 'Leg Press',              trackingType: 'weight-reps' },
   'hip thrust':             { id: '0a1b2c3d-0001-4000-8000-000000000007', name: 'Hip Thrust',             trackingType: 'weight-reps' },
+  'bb hip thrust': {id: '0a1b2c3d-0001-4000-8000-000000000007', name: 'Hip Thrust',             trackingType: 'weight-reps' }, 
   'calf raise':             { id: '0a1b2c3d-0001-4000-8000-000000000008', name: 'Calf Raise',             trackingType: 'weight-reps' },
+  'bb calf raise': {id: 'd846748e-8a7a-48c1-939e-74688aff4ce5', name: 'Barbell Calf Raise', trackingType: 'weight-reps'},
+  'hip adductor': {id: '8915d078-a1ce-40c5-ad0f-5f69188f9bf9', name: 'Hip Adductor', trackingType: 'weight-reps'},
   // Chest
   'push up':                { id: '0a1b2c3d-0002-4000-8000-000000000001', name: 'Push-up',                trackingType: 'reps' },
   'push-up':                { id: '0a1b2c3d-0002-4000-8000-000000000001', name: 'Push-up',                trackingType: 'reps' },
@@ -100,9 +106,11 @@ const PRESET_MAP: Record<string, { id: string; name: string; trackingType: Compl
   'pulldown':               { id: '0a1b2c3d-0003-4000-8000-000000000003', name: 'Lat Pulldown',           trackingType: 'weight-reps' },
   'pull-up':                { id: '0a1b2c3d-0003-4000-8000-000000000004', name: 'Pull-up',                trackingType: 'reps' },
   'pull up':                { id: '0a1b2c3d-0003-4000-8000-000000000004', name: 'Pull-up',                trackingType: 'reps' },
+  'pull up with band': {id: '5f2c413b-ede0-4a1d-963a-80b1af80fd2c', name: 'Pull-up with Band', trackingType: 'reps'},
   'seated cable row':       { id: '0a1b2c3d-0003-4000-8000-000000000005', name: 'Seated Cable Row',       trackingType: 'weight-reps' },
   // Shoulders
   'db shoulder press':      { id: '0a1b2c3d-0004-4000-8000-000000000001', name: 'Shoulder Press',         trackingType: 'weight-reps' },
+  'bb shoulder press': {id: '28ccb5da-8695-4aa7-8cf8-98c15513fc62', name: 'Barbell Shoulder Press', trackingType: 'weight-reps'},
   'shoulder press':         { id: '0a1b2c3d-0004-4000-8000-000000000001', name: 'Shoulder Press',         trackingType: 'weight-reps' },
   'lateral raise':          { id: '0a1b2c3d-0004-4000-8000-000000000002', name: 'Lateral Raise',          trackingType: 'weight-reps' },
   'db lateral raise':       { id: '0a1b2c3d-0004-4000-8000-000000000002', name: 'Lateral Raise',          trackingType: 'weight-reps' },
@@ -117,6 +125,13 @@ const PRESET_MAP: Record<string, { id: string; name: string; trackingType: Compl
   'tricep extension':       { id: '0a1b2c3d-0005-4000-8000-000000000003', name: 'Triceps Extension',      trackingType: 'weight-reps' },
   'triceps pushdown':       { id: '0a1b2c3d-0005-4000-8000-000000000004', name: 'Triceps Pushdown',       trackingType: 'weight-reps' },
   'tricep pushdown':        { id: '0a1b2c3d-0005-4000-8000-000000000004', name: 'Triceps Pushdown',       trackingType: 'weight-reps' },
+  'db kickback': {id: '785ca6b9-306d-4a1e-9902-d3274457c94c', name: 'Dumbbell Kickback', trackingType: 'weight-reps'},
+  'm triceps': {id: 'dbbfd113-32ea-4e51-9d6e-68e0928c40e3', name: 'Machine Triceps', trackingType: 'weight-reps'},
+  'm row': {id: '6e3a473e-f1cf-4376-b8ad-45361acc8df4', name: 'Machine Row', trackingType: 'weight-reps'},
+  'cable chest': {id: 'b463cf31-f11f-4c43-99f1-213bcc1bd530', name: 'Cable Chest', trackingType: 'weight-reps'},
+  'cable triceps': {id: '9ce4dcfa-a18c-4f65-90db-d4910c8ffecf', name: 'Cable Triceps', trackingType: 'weight-reps'},
+  'bench dip': {id: '7ef897a1-d558-486a-88d2-f026fb65b5fc', name: 'Bench Dip', trackingType: 'reps'},
+  'dip': {id: '722c635f-e2f6-4750-8700-35f058df58e9', name: 'Dip', trackingType: 'reps'},
   // Core
   'crunch':                 { id: '0a1b2c3d-0006-4000-8000-000000000001', name: 'Crunch',                 trackingType: 'reps' },
   'crunches':               { id: '0a1b2c3d-0006-4000-8000-000000000001', name: 'Crunch',                 trackingType: 'reps' },
@@ -125,6 +140,11 @@ const PRESET_MAP: Record<string, { id: string; name: string; trackingType: Compl
   'lying leg raise':        { id: '0a1b2c3d-0006-4000-8000-000000000004', name: 'Lying Leg Raise',        trackingType: 'reps' },
   'leg raise':              { id: '0a1b2c3d-0006-4000-8000-000000000004', name: 'Lying Leg Raise',        trackingType: 'reps' },
   'russian twist':          { id: '0a1b2c3d-0006-4000-8000-000000000005', name: 'Russian Twist',          trackingType: 'reps' },
+  'leg hand raise': {id: '0e3e6367-8651-48e1-b2ea-ae7aa2e1caf2', name: 'Leg Hand Raise', trackingType: 'reps'},
+  'swiper': {id: 'b75f6964-846f-41e0-b7d2-fa3466060752', name: 'Swiper', trackingType: 'reps'},
+  'hanging leg raise': {id: 'd759fb61-e2c2-4f02-ae4e-9199acfe4043', name: 'Hanging Leg Raise', trackingType: 'reps'},
+  'roman chair': {id: 'bb42a962-f062-463a-956e-b38a1438b04e', name: 'Roman Chair', trackingType: 'weight-reps'},
+  'lying abductor': {id: '82cedb28-8ac0-457d-8304-93b2bf797d3e', name: 'Lying Abductor', trackingType: 'reps'}
 };
 
 // ---------------------------------------------------------------------------

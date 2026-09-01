@@ -196,8 +196,9 @@ function buildSessionPayload(session: ImportedSession, exerciseIdMap: Map<string
     completed_at: session.completedAt,
     status: session.status,
       exercises: session.exercises.map(ex => ({
-      // Use server ID if we have a mapping, otherwise the preset UUID is already correct
-      exercise: exerciseIdMap.get(ex.exerciseId) ?? ex.exerciseId,
+      // Prefer server ID from map (covers both custom and preset lookups by name),
+      // fall back to the local UUID from import-history.ts (last resort)
+      exercise: exerciseIdMap.get(ex.exerciseName.toLowerCase()) ?? exerciseIdMap.get(ex.exerciseId) ?? ex.exerciseId,
       exercise_name: ex.exerciseName,
       tracking_type: ex.trackingType,
       started_at: ex.startedAt ?? null,
@@ -248,32 +249,53 @@ async function main() {
   console.error(`\nConnecting to: ${base}`);
   await api.login(email, password);
 
-  // -- Resolve custom exercises -----------------------------------------------
-  // Map from local UUID (from import-history.ts) → server UUID
+  // -- Resolve exercises -------------------------------------------------------
+  // Map: lowercased exercise name → server UUID  (covers both presets and custom)
+  // Map: local UUID (from import-history.ts)    → server UUID  (custom exercises)
   const exerciseIdMap = new Map<string, string>();
 
-  if (imported.customExercises.length > 0) {
-    console.error('\nResolving custom exercises…');
+  console.error('\nFetching server exercise list…');
+  const serverExercises = await api.getExercises();
+  // Seed map with ALL server exercises by name so preset UUIDs resolve correctly
+  for (const e of serverExercises) {
+    exerciseIdMap.set(e.name.toLowerCase(), e.id);
+  }
+  console.error(`  ${serverExercises.length} exercises on server`);
 
-    // Fetch what already exists on the server
-    const serverExercises = await api.getExercises();
-    const serverByName = new Map(serverExercises.map(e => [e.name.toLowerCase(), e.id]));
+  // Resolve custom exercises (those not in the server preset list)
+  const allSessionExercises = imported.sessions.flatMap(s => s.exercises);
 
-    for (const ce of imported.customExercises) {
-      const existing = serverByName.get(ce.name.toLowerCase());
-      if (existing) {
-        console.error(`  "${ce.name}" already exists on server → ${existing}`);
-        exerciseIdMap.set(ce.id, existing);
-      } else {
-        const created = await api.createExercise({
-          name: ce.name,
-          category: ce.category,
-          tracking_type: ce.trackingType,
-        });
-        console.error(`  Created "${ce.name}" → ${created.id}`);
-        exerciseIdMap.set(ce.id, created.id);
-        await sleep(100); // gentle rate limiting
-      }
+  // Collect every exercise referenced in sessions that the server doesn't know about
+  const missingByName = new Map<string, { exerciseId: string; exerciseName: string; trackingType: string }>();
+  for (const ex of allSessionExercises) {
+    if (!exerciseIdMap.has(ex.exerciseName.toLowerCase())) {
+      missingByName.set(ex.exerciseName.toLowerCase(), ex);
+    }
+  }
+
+  // Also include explicitly listed custom exercises
+  for (const ce of imported.customExercises) {
+    if (!exerciseIdMap.has(ce.name.toLowerCase())) {
+      missingByName.set(ce.name.toLowerCase(), {
+        exerciseId: ce.id,
+        exerciseName: ce.name,
+        trackingType: ce.trackingType,
+      });
+    }
+  }
+
+  if (missingByName.size > 0) {
+    console.error(`\nCreating ${missingByName.size} missing exercise(s) on server…`);
+    for (const ex of missingByName.values()) {
+      const created = await api.createExercise({
+        name: ex.exerciseName,
+        category: 'other',
+        tracking_type: ex.trackingType,
+      });
+      console.error(`  Created "${ex.exerciseName}" → ${created.id}`);
+      exerciseIdMap.set(ex.exerciseName.toLowerCase(), created.id);
+      exerciseIdMap.set(ex.exerciseId, created.id);
+      await sleep(100);
     }
   }
 
