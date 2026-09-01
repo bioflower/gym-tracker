@@ -1,0 +1,54 @@
+name: Deploy backend to Lambda (Zappa + Docker deps)
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: Zappa stage to deploy
+        required: true
+        default: dev
+        type: choice
+        options: [dev]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::214182382176:role/gym-tracker-github-deploy
+          audience: sts.amazonaws.com
+          aws-region: us-east-1
+
+      - name: Build Lambda dependencies (Docker)
+        working-directory: backend
+        run: ./scripts/build_lambda_deps.sh
+
+      - name: Run migrations + collectstatic
+        working-directory: backend
+        env:
+          APP_ENV: aws-dev
+          AWS_PARAMETER_PREFIX: /gym-tracker/dev
+          AWS_APP_REGION: us-east-1
+        run: |
+          ./.venv-lambda/bin/python manage.py migrate --noinput
+          ./.venv-lambda/bin/python manage.py collectstatic --noinput
+
+      - name: Deploy with Zappa
+        working-directory: backend
+        run: ./.venv-lambda/bin/zappa update ${{ inputs.stage }}
+
+      - name: Verify deployment
+        run: aws lambda get-function-configuration --function-name gym-tracker-dev --query 'State,LastUpdateStatus' --output text
