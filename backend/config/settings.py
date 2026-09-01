@@ -139,6 +139,14 @@ CORS_ALLOWED_ORIGINS = [
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# API Gateway stage prefix (e.g. /dev) is forwarded as SCRIPT_NAME by Zappa.
+# Without this Django sees path as `dev/api/auth/login/` and returns 404
+# because urls.py only defines `api/auth/`. Force it only on AWS.
+if APP_ENV.startswith("aws-"):
+    FORCE_SCRIPT_NAME = "/dev"
+else:
+    FORCE_SCRIPT_NAME = None
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
