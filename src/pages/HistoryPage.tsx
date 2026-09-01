@@ -16,7 +16,7 @@ for (const s of (historyFallback as { sessions: { id: string; date: string; exer
   }
 }
 function getExerciseDuration(
-  ex: { id: string; exerciseId: string; exerciseName: string; startedAt: string | null; completedAt: string | null },
+  ex: { id: string; exerciseId: string; exerciseName: string; startedAt: string | null; completedAt: string | null; sets?: { startedAt?: string | null; completedAt?: string | null }[] },
   sessionDate: string
 ): string | null {
   let start = ex.startedAt;
@@ -28,6 +28,17 @@ function getExerciseDuration(
     if (fb) {
       start = start ?? fb.startedAt;
       end = end ?? fb.completedAt;
+    }
+  }
+  // Final fallback: derive from set timestamps if exercise timestamps are still missing
+  if ((!start || !end) && ex.sets && ex.sets.length > 0) {
+    const starts = ex.sets.map(s => s.startedAt).filter(Boolean) as string[];
+    const ends = ex.sets.map(s => s.completedAt).filter(Boolean) as string[];
+    if (starts.length > 0 && ends.length > 0) {
+      const earliest = starts.sort()[0];
+      const latest = ends.sort().reverse()[0];
+      start = start ?? earliest;
+      end = end ?? latest;
     }
   }
   if (!start || !end) return null;
@@ -172,7 +183,7 @@ export function HistoryPage() {
               <p>Duration: {formatDurationFromDates(session.startedAt, session.completedAt)}</p>
               <p>Exercises: {session.exercises.length}</p>
               {session.exercises.map(ex => {
-                const duration = getExerciseDuration(ex as { id: string; exerciseId: string; exerciseName: string; startedAt: string | null; completedAt: string | null }, session.date);
+                const duration = getExerciseDuration(ex as { id: string; exerciseId: string; exerciseName: string; startedAt: string | null; completedAt: string | null; sets: { startedAt: string | null; completedAt: string | null }[] }, session.date);
                 return (
                 <div key={ex.id} className="history-exercise">
                   <div className="history-exercise-header">
