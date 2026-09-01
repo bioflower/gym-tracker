@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { WorkoutDay } from '../types/gym';
+import { useGymTracker } from '../hooks/useGymTracker';
 
 interface WorkoutCompletionModalProps {
   nextWorkout: WorkoutDay | null;
@@ -19,6 +20,8 @@ export function WorkoutCompletionModal({
   onClose,
 }: WorkoutCompletionModalProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const { getAllExercises } = useGymTracker();
+  const allExercises = getAllExercises();
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -45,9 +48,10 @@ export function WorkoutCompletionModal({
             <h2>Workout Completed</h2>
             <p className="next-workout-label">Next workout: {nextWorkout.name}</p>
             <ul className="next-workout-list">
-              {nextWorkout.exercises.map(ex => (
-                <li key={ex.id}>{ex.exerciseId}</li>
-              ))}
+              {nextWorkout.exercises.map(ex => {
+                const def = allExercises.find(e => e.id === ex.exercise);
+                return <li key={ex.id}>{def?.name ?? 'Unknown'}</li>;
+              })}
             </ul>
             <div className="modal-actions">
               <button className="btn btn-primary" ref={closeRef} onClick={onClose}>

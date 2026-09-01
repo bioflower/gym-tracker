@@ -31,7 +31,7 @@ function MockAuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-async function completeAndFinishWorkout() {
+async function finishWorkout() {
   render(
     <MockAuthProvider>
       <MemoryRouter initialEntries={['/']}>
@@ -42,19 +42,12 @@ async function completeAndFinishWorkout() {
   await act(async () => {
     fireEvent.click(screen.getByText('Start Workout'));
   });
-  const exerciseHeaders = document.querySelectorAll('.exercise-card-header');
-  exerciseHeaders.forEach(header => fireEvent.click(header));
-  const startButtons = screen.getAllByText('Start');
-  for (const btn of startButtons) {
-    await act(async () => {
-      fireEvent.click(btn);
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByText('Mark Done'));
-    });
-  }
+  // Exercises are not completed — click "Finish Workout" → modal → "Finish Anyway"
   await act(async () => {
     fireEvent.click(screen.getByText('Finish Workout'));
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText('Finish Anyway'));
   });
   // Flush the localStorage persist effect
   await act(async () => {});
@@ -66,7 +59,7 @@ describe('Workout history persistence', () => {
   });
 
   it('shows the finished workout in history immediately after finishing', async () => {
-    await completeAndFinishWorkout();
+    await finishWorkout();
 
     render(
       <MockAuthProvider>

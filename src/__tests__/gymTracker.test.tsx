@@ -1,10 +1,11 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { type ReactNode } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Navigation } from '../components/Navigation';
 import { TodayPage } from '../pages/TodayPage';
+import { BUTTON_LABELS } from '../constants/workout';
 
 vi.mock('../api/sync', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api/sync')>();
@@ -57,19 +58,32 @@ describe('Gym Tracker', () => {
     await act(async () => {
       fireEvent.click(screen.getByText('Start Workout'));
     });
-    const exerciseHeaders = document.querySelectorAll('.exercise-card-header');
-    exerciseHeaders.forEach(header => {
+    document.querySelectorAll('.exercise-card-header').forEach(header => {
       fireEvent.click(header);
     });
-    const startButtons = screen.getAllByText('Start');
-    for (const btn of startButtons) {
+
+    const cards = Array.from(document.querySelectorAll('.exercise-card-body'));
+    for (const card of cards) {
+      const scoped = within(card as HTMLElement);
+      for (let setNum = 0; setNum < 3; setNum++) {
+        const startLabel = setNum === 0 ? 'Start' : 'Start Next Set';
+        await act(async () => {
+          fireEvent.click(scoped.getByText(startLabel));
+        });
+        await act(async () => {
+          fireEvent.click(scoped.getByText('Stop'));
+        });
+        await act(async () => {
+          fireEvent.change(scoped.getByPlaceholderText('Reps'), { target: { value: '10' } });
+          // Enter is now required to mark a set complete (prevents premature completion on blur)
+          fireEvent.keyDown(scoped.getByPlaceholderText('Reps'), { key: 'Enter' });
+        });
+      }
       await act(async () => {
-        fireEvent.click(btn);
-      });
-      await act(async () => {
-        fireEvent.click(screen.getByText('Mark Done'));
+        fireEvent.click(scoped.getByText(BUTTON_LABELS.COMPLETE_EXERCISE));
       });
     }
+
     await act(async () => {
       fireEvent.click(screen.getByText('Finish Workout'));
     });

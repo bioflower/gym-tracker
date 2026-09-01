@@ -7,9 +7,9 @@ import { useState } from 'react';
 export function TodayPage() {
   const {
     data, startWorkout, getCurrentWorkoutDay,
-    finishWorkout, skipWorkout, startExercise,
-    completeExercise, updateSet, addSet, removeSet,
-    getNextWorkout,
+    finishWorkout, skipWorkout, setExerciseDone,
+    updateSet, addSet, removeSet, swapExerciseForToday,
+    getAllExercises, getNextWorkout,
   } = useGymTracker();
   const [showModal, setShowModal] = useState(false);
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
@@ -35,8 +35,9 @@ export function TodayPage() {
     );
   }
 
-  const incompleteExercises = active.exercises.filter(e => !e.sets.every(s => s.completed));
+  const incompleteExercises = active.exercises.filter(e => !e.completed);
   const allComplete = incompleteExercises.length === 0;
+  const allExercises = getAllExercises();
 
   function handleFinish() {
     if (!allComplete) {
@@ -67,11 +68,12 @@ export function TodayPage() {
             key={exercise.id}
             exercise={exercise}
             workoutHistory={data.workoutHistory}
-            onStart={() => startExercise(exercise.id)}
-            onComplete={() => completeExercise(exercise.id)}
+            allExercises={allExercises}
+            onSetDone={(done) => setExerciseDone(exercise.id, done)}
             onUpdateSet={(setId, updates) => updateSet(exercise.id, setId, updates)}
             onAddSet={() => addSet(exercise.id)}
             onRemoveSet={(setId) => removeSet(exercise.id, setId)}
+            onSwapExercise={(newExerciseId) => swapExerciseForToday(exercise.id, newExerciseId)}
           />
         ))}
       </div>

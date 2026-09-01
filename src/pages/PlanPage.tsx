@@ -8,6 +8,7 @@ export function PlanPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newDayName, setNewDayName] = useState('');
   const [showAddExercise, setShowAddExercise] = useState<string | null>(null);
+  const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
 
   const allExercises = getAllExercises();
 
@@ -19,7 +20,9 @@ export function PlanPage() {
   }
 
   function handleDelete(dayId: string) {
-    updateWorkoutPlan(data.workoutPlan.filter(d => d.id !== dayId));
+    updateWorkoutPlan(
+      data.workoutPlan.filter(d => d.id !== dayId).map((d, i) => ({ ...d, position: i }))
+    );
   }
 
   function handleMove(dayId: string, direction: -1 | 1) {
@@ -28,7 +31,7 @@ export function PlanPage() {
     if (newIdx < 0 || newIdx >= data.workoutPlan.length) return;
     const plan = [...data.workoutPlan];
     [plan[idx], plan[newIdx]] = [plan[newIdx], plan[idx]];
-    updateWorkoutPlan(plan);
+    updateWorkoutPlan(plan.map((d, i) => ({ ...d, position: i })));
   }
 
   function handleAddDay() {
@@ -37,6 +40,7 @@ export function PlanPage() {
     const newDay: WorkoutDay = {
       id: generateId(),
       name: newDayName,
+      position: data.workoutPlan.length,
       exercises: [],
     };
     updateWorkoutPlan([...data.workoutPlan, newDay]);
@@ -48,9 +52,9 @@ export function PlanPage() {
     if (!day) return;
     const newExercise: PlannedExercise = {
       id: generateId(),
-      exerciseId,
+      exercise: exerciseId,
       position: day.exercises.length,
-      targetSets: 3,
+      target_sets: 3,
     };
     updateWorkoutPlan(data.workoutPlan.map(d =>
       d.id === dayId ? { ...d, exercises: [...d.exercises, newExercise] } : d
@@ -64,6 +68,17 @@ export function PlanPage() {
         ? { ...d, exercises: d.exercises.filter(e => e.id !== exerciseId).map((e, i) => ({ ...e, position: i })) }
         : d
     ));
+  }
+
+  function handleChangeExercise(dayId: string, plannedExerciseId: string, newExerciseId: string) {
+    updateWorkoutPlan(data.workoutPlan.map(d =>
+      d.id === dayId
+        ? { ...d, exercises: d.exercises.map(e =>
+            e.id === plannedExerciseId ? { ...e, exercise: newExerciseId } : e
+          ) }
+        : d
+    ));
+    setEditingExerciseId(null);
   }
 
   function handleMoveExercise(dayId: string, exerciseId: string, direction: -1 | 1) {
@@ -104,10 +119,24 @@ export function PlanPage() {
           </div>
           <div className="plan-exercise-list">
             {day.exercises.map((ex, exIdx) => {
-              const exerciseDef = allExercises.find(e => e.id === ex.exerciseId);
+              const exerciseDef = allExercises.find(e => e.id === ex.exercise);
               return (
                 <div key={ex.id} className="plan-exercise-row">
-                  <span>{exerciseDef?.name ?? 'Unknown'}</span>
+                  {editingExerciseId === ex.id ? (
+                    <select
+                      className="input"
+                      defaultValue={ex.exercise}
+                      onChange={e => handleChangeExercise(day.id, ex.id, e.target.value)}
+                      onBlur={() => setEditingExerciseId(null)}
+                      autoFocus
+                    >
+                      {allExercises.map(e => (
+                        <option key={e.id} value={e.id}>{e.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span onClick={() => setEditingExerciseId(ex.id)}>{exerciseDef?.name ?? 'Unknown'}</span>
+                  )}
                   <div className="plan-exercise-controls">
                     <button className="btn btn-small" onClick={() => handleMoveExercise(day.id, ex.id, -1)} disabled={exIdx === 0}>↑</button>
                     <button className="btn btn-small" onClick={() => handleMoveExercise(day.id, ex.id, 1)} disabled={exIdx === day.exercises.length - 1}>↓</button>

@@ -103,6 +103,8 @@ describe('fetchSessions', () => {
           exerciseId: 'ex-1',
           exerciseName: 'Squat',
           trackingType: 'weight-reps',
+          startedAt: null,
+          completedAt: null,
           sets: [
             {
               id: 'set-1',

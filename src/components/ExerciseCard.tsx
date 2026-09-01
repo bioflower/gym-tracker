@@ -1,21 +1,35 @@
 import { useState } from 'react';
-import type { ActiveExercise, ExerciseSet, WorkoutSession } from '../types/gym';
-import { ExerciseSetRow } from './ExerciseSetRow';
+import type { ActiveExercise, Exercise, ExerciseSet, WorkoutSession } from '../types/gym';
+import { CompletedSetRow } from './CompletedSetRow';
+import { SetInProgress } from './SetInProgress';
+import { RestTimer } from './RestTimer';
+import { ExerciseSwapControl } from './ExerciseSwapControl';
 import { findMostRecentExerciseResult } from '../utils/exerciseHistory';
+import { BUTTON_LABELS } from '../constants/workout';
 
 interface ExerciseCardProps {
   exercise: ActiveExercise;
   workoutHistory: WorkoutSession[];
-  onStart: () => void;
-  onComplete: () => void;
+  allExercises: Exercise[];
+  onSetDone: (done: boolean) => void;
   onUpdateSet: (setId: string, updates: Partial<ExerciseSet>) => void;
   onAddSet: () => void;
   onRemoveSet: (setId: string) => void;
+  onSwapExercise: (newExerciseId: string) => void;
 }
 
-export function ExerciseCard({ exercise, workoutHistory, onStart, onComplete, onUpdateSet, onAddSet, onRemoveSet }: ExerciseCardProps) {
+export function ExerciseCard({
+  exercise, workoutHistory, allExercises, onSetDone, onUpdateSet, onAddSet, onRemoveSet, onSwapExercise,
+}: ExerciseCardProps) {
   const [expanded, setExpanded] = useState(false);
   const previousResult = findMostRecentExerciseResult(workoutHistory, exercise.exerciseId);
+  const lastPreviousSet = previousResult?.sets[previousResult.sets.length - 1] ?? null;
+  const defaultWeight = lastPreviousSet?.type === 'weight-reps' ? (lastPreviousSet.weight ?? null) : null;
+  const defaultWeightUnit = lastPreviousSet?.type === 'weight-reps' ? (lastPreviousSet.weightUnit ?? 'kg') : 'kg';
+
+  const completedSets = exercise.sets.filter(s => s.completed);
+  const activeSet = exercise.sets.find(s => !s.completed && s.startedAt) ?? null;
+  const lastCompletedSet = completedSets.length > 0 ? completedSets[completedSets.length - 1] : null;
 
   return (
     <div className={`exercise-card ${exercise.completed ? 'completed' : ''}`}>
@@ -36,6 +50,12 @@ export function ExerciseCard({ exercise, workoutHistory, onStart, onComplete, on
       </div>
       {expanded && (
         <div className="exercise-card-body">
+          <ExerciseSwapControl
+            currentExerciseId={exercise.exerciseId}
+            allExercises={allExercises}
+            disabled={exercise.sets.length > 0}
+            onSwap={onSwapExercise}
+          />
           {previousResult && (
             <div className="previous-result">
               <strong>Last time:</strong>
@@ -50,26 +70,67 @@ export function ExerciseCard({ exercise, workoutHistory, onStart, onComplete, on
             </div>
           )}
           <div className="sets-list">
-            {exercise.sets.map((set, i) => (
-              <ExerciseSetRow
+            {completedSets.map((set, i) => (
+              <CompletedSetRow
                 key={set.id}
                 set={set}
                 trackingType={exercise.trackingType}
+                setIndex={i}
                 onUpdate={onUpdateSet}
                 onRemove={onRemoveSet}
-                setIndex={i}
               />
             ))}
           </div>
-          <button className="btn btn-small btn-outline" onClick={onAddSet}>+ Add Set</button>
-          <div className="exercise-card-actions">
-            {!exercise.startedAt && !exercise.completed && (
-              <button className="btn btn-primary" onClick={onStart}>Start Exercise</button>
-            )}
-            {exercise.startedAt && !exercise.completed && (
-              <button className="btn btn-success" onClick={onComplete}>Complete Exercise</button>
-            )}
-          </div>
+          {exercise.completed ? (
+            <button className="btn btn-small btn-outline" onClick={() => onSetDone(false)}>
+              {BUTTON_LABELS.RESUME_EXERCISE}
+            </button>
+          ) : (
+            <>
+              {activeSet ? (
+                <SetInProgress
+                  mode={activeSet.completedAt ? 'awaiting-input' : 'active'}
+                  set={activeSet}
+                  trackingType={exercise.trackingType}
+                  setIndex={exercise.sets.findIndex(s => s.id === activeSet.id)}
+                  defaultWeight={defaultWeight}
+                  defaultWeightUnit={defaultWeightUnit}
+                  onStart={onAddSet}
+                  onUpdate={onUpdateSet}
+                />
+              ) : lastCompletedSet ? (
+                <>
+                  <RestTimer previousCompletedAt={lastCompletedSet.completedAt!} />
+                  <div className='exercise-actions'>
+                    <button 
+                      className='btn btn-primary btn-small'
+                      onClick={onAddSet}
+                    >
+                      {BUTTON_LABELS.START_NEXT_SET}
+                    </button>
+
+                    <button
+                      className='btn btn-success btn-small'
+                      onClick={() => onSetDone(true)}
+                    >
+                      {BUTTON_LABELS.COMPLETE_EXERCISE}
+                    </button>
+                  </div>
+                </>
+              ): (
+                <SetInProgress
+                  mode="idle"
+                  set={null}
+                  trackingType={exercise.trackingType}
+                  setIndex={0}
+                  defaultWeight={defaultWeight}
+                  defaultWeightUnit={defaultWeightUnit}
+                  onStart={onAddSet}
+                  onUpdate={onUpdateSet}
+                />
+              )}
+            </>
+          )}
         </div>
       )}
     </div>

@@ -69,15 +69,15 @@ export type ExerciseSet = WeightRepSet | RepsOnlySet | DurationSet | DistanceDur
 export interface WorkoutDay {
   id: string;
   name: string;
+  position: number;
   exercises: PlannedExercise[];
 }
 
 export interface PlannedExercise {
   id: string;
-  exerciseId: string;
+  exercise: string;
   position: number;
-  targetSets: number;
-  notes?: string;
+  target_sets: number;
 }
 
 export interface ActiveWorkoutSession {
@@ -139,9 +139,10 @@ export interface WorkoutSession {
 }
 
 export interface AppData {
-  version: 1;
+  version: 2;
   currentWorkoutIndex: number;
   workoutPlan: WorkoutDay[];
+  presetExercises: Exercise[];
   customExercises: Exercise[];
   activeWorkout: ActiveWorkoutSession | null;
   workoutHistory: WorkoutSession[];
