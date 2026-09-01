@@ -3,18 +3,28 @@ import { useGymTracker } from '../hooks/useGymTracker';
 import { formatDate, formatTime, formatDurationFromDates } from '../utils/dateTime';
 import historyFallback from '../../history.json';
 
-// Fallback for per-exercise timestamps that are null in localStorage (e.g. after sync from server that drops them) — use repo history.json as source of truth.
-const historyExerciseFallback = new Map<string, { startedAt: string | null; completedAt: string | null }>();
-for (const s of (historyFallback as { sessions: { id: string; exercises: { id: string; exerciseId: string; startedAt: string | null; completedAt: string | null }[] }[] }).sessions) {
+// Fallback for per-exercise timestamps that are null in localStorage (e.g. after sync from server that drops them or regenerates UUIDs) — use repo history.json as source of truth.
+const historyExerciseFallbackById = new Map<string, { startedAt: string | null; completedAt: string | null }>();
+const historyExerciseFallbackByDateName = new Map<string, { startedAt: string | null; completedAt: string | null }>();
+for (const s of (historyFallback as { sessions: { id: string; date: string; exercises: { id: string; exerciseId: string; exerciseName: string; startedAt: string | null; completedAt: string | null }[] }[] }).sessions) {
   for (const e of s.exercises) {
-    historyExerciseFallback.set(e.id, { startedAt: e.startedAt ?? null, completedAt: e.completedAt ?? null });
+    historyExerciseFallbackById.set(e.id, { startedAt: e.startedAt ?? null, completedAt: e.completedAt ?? null });
+    const keyDateName = `${s.date}:${e.exerciseName.toLowerCase().trim()}`;
+    const keyDateId = `${s.date}:${e.exerciseId}`;
+    if (!historyExerciseFallbackByDateName.has(keyDateName)) historyExerciseFallbackByDateName.set(keyDateName, { startedAt: e.startedAt ?? null, completedAt: e.completedAt ?? null });
+    if (!historyExerciseFallbackByDateName.has(keyDateId)) historyExerciseFallbackByDateName.set(keyDateId, { startedAt: e.startedAt ?? null, completedAt: e.completedAt ?? null });
   }
 }
-function getExerciseDuration(ex: { id: string; exerciseId: string; startedAt: string | null; completedAt: string | null }): string | null {
+function getExerciseDuration(
+  ex: { id: string; exerciseId: string; exerciseName: string; startedAt: string | null; completedAt: string | null },
+  sessionDate: string
+): string | null {
   let start = ex.startedAt;
   let end = ex.completedAt;
   if (!start || !end) {
-    const fb = historyExerciseFallback.get(ex.id);
+    const fb = historyExerciseFallbackById.get(ex.id)
+      ?? historyExerciseFallbackByDateName.get(`${sessionDate}:${ex.exerciseName.toLowerCase().trim()}`)
+      ?? historyExerciseFallbackByDateName.get(`${sessionDate}:${ex.exerciseId}`);
     if (fb) {
       start = start ?? fb.startedAt;
       end = end ?? fb.completedAt;
@@ -162,7 +172,7 @@ export function HistoryPage() {
               <p>Duration: {formatDurationFromDates(session.startedAt, session.completedAt)}</p>
               <p>Exercises: {session.exercises.length}</p>
               {session.exercises.map(ex => {
-                const duration = getExerciseDuration(ex as { id: string; exerciseId: string; startedAt: string | null; completedAt: string | null });
+                const duration = getExerciseDuration(ex as { id: string; exerciseId: string; exerciseName: string; startedAt: string | null; completedAt: string | null }, session.date);
                 return (
                 <div key={ex.id} className="history-exercise">
                   <div className="history-exercise-header">
