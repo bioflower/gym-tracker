@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type {
   AppData, ActiveWorkoutSession, ActiveExercise,
-  WorkoutDay, Exercise, ExerciseSet,
+  WorkoutDay, Exercise, ExerciseSet, WorkoutSession,
 } from '../types/gym';
 import { loadAppData, saveAppData, clearAppData, getDefaultAppData } from '../utils/storage';
 import { advanceWorkout, getCurrentWorkout } from '../utils/rotation';
@@ -9,6 +9,7 @@ import { generateId } from '../utils/validation';
 import { getTodayISO, nowISO } from '../utils/dateTime';
 import * as workouts from '../api/workouts';
 import { isOnline, enqueue, setupSyncListener } from '../api/sync';
+import { convertActiveToCompletedExercise } from '../utils/exerciseHistory';
 
 export function useGymTracker() {
   const [data, setData] = useState<AppData>(() => loadAppData());
@@ -103,12 +104,13 @@ export function useGymTracker() {
 
   const finishWorkout = useCallback(async () => {
     if (!data.activeWorkout) return;
+    const completedAt = nowISO();
     const sessionData: Record<string, unknown> = {
       workout_day: data.activeWorkout.workoutDayId,
       workout_name: data.activeWorkout.workoutName,
       date: data.activeWorkout.date,
       started_at: data.activeWorkout.startedAt,
-      completed_at: nowISO(),
+      completed_at: completedAt,
       status: 'completed',
       exercises: data.activeWorkout.exercises.map(e => ({
         exercise: e.exerciseId,
@@ -129,6 +131,18 @@ export function useGymTracker() {
       })),
     };
 
+    // Build local session for immediate history update (no reload required)
+    const newSession: WorkoutSession = {
+      id: data.activeWorkout.id,
+      workoutDayId: data.activeWorkout.workoutDayId,
+      workoutName: data.activeWorkout.workoutName,
+      date: data.activeWorkout.date,
+      startedAt: data.activeWorkout.startedAt,
+      completedAt,
+      status: 'completed',
+      exercises: data.activeWorkout.exercises.map(convertActiveToCompletedExercise),
+    };
+
     if (isOnline()) {
       try {
         await workouts.saveSession(sessionData as never);
@@ -143,6 +157,7 @@ export function useGymTracker() {
       ...prev,
       activeWorkout: null,
       currentWorkoutIndex: advanceWorkout(prev.workoutPlan, prev.currentWorkoutIndex),
+      workoutHistory: [newSession, ...prev.workoutHistory],
     }));
   }, [data.activeWorkout, data.workoutPlan, data.currentWorkoutIndex]);
 

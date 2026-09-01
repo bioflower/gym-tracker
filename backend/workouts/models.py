@@ -125,6 +125,8 @@ class CompletedExercise(models.Model):
     exercise = models.ForeignKey(Exercise, on_delete=models.SET_NULL, null=True)
     exercise_name = models.CharField(max_length=200)
     tracking_type = models.CharField(max_length=20)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["id"]

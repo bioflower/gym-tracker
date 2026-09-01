@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ExerciseCard } from '../components/ExerciseCard';
-import type { ActiveExercise, Exercise } from '../types/gym';
+import type { ActiveExercise, Exercise, ExerciseSet } from '../types/gym';
 import { BUTTON_LABELS } from '../constants/workout';
 
 const exerciseDef: Exercise = { id: 'ex-1', name: 'Bench Press', category: 'chest', trackingType: 'weight-reps', isPreset: true };
@@ -142,5 +143,47 @@ describe('ExerciseCard', () => {
     renderCard(makeExercise());
     fireEvent.click(document.querySelector('.exercise-card-header')!);
     expect(screen.getByLabelText('Change exercise')).toBeInTheDocument();
+  });
+
+  it('keeps the reps field open after the first digit so values like 13 can be typed', () => {
+    function StatefulCard() {
+      const [exercise, setExercise] = useState<ActiveExercise>(makeExercise({
+        exerciseName: 'Crunch',
+        trackingType: 'reps',
+        startedAt: '2026-01-01T00:00:00.000Z',
+        sets: [{
+          id: 'set-1',
+          reps: null,
+          startedAt: '2026-01-01T00:00:00.000Z',
+          completedAt: '2026-01-01T00:00:05.000Z',
+          completed: false,
+        }],
+      }));
+      return (
+        <ExerciseCard
+          exercise={exercise}
+          workoutHistory={[]}
+          allExercises={[exerciseDef, otherDef]}
+          onSetDone={() => {}}
+          onUpdateSet={(setId, updates) => {
+            setExercise(e => ({
+              ...e,
+              sets: e.sets.map(s => (s.id === setId ? { ...s, ...updates } as ExerciseSet : s)),
+            }));
+          }}
+          onAddSet={() => {}}
+          onRemoveSet={() => {}}
+          onSwapExercise={() => {}}
+        />
+      );
+    }
+
+    render(<StatefulCard />);
+    fireEvent.click(document.querySelector('.exercise-card-header')!);
+    const input = screen.getByPlaceholderText('Reps');
+    fireEvent.change(input, { target: { value: '1' } });
+    expect(screen.getByPlaceholderText('Reps')).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('Reps'), { target: { value: '13' } });
+    expect(screen.getByPlaceholderText('Reps')).toHaveValue(13);
   });
 });

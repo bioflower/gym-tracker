@@ -75,6 +75,8 @@ describe('Gym Tracker', () => {
         });
         await act(async () => {
           fireEvent.change(scoped.getByPlaceholderText('Reps'), { target: { value: '10' } });
+          // Enter is now required to mark a set complete (prevents premature completion on blur)
+          fireEvent.keyDown(scoped.getByPlaceholderText('Reps'), { key: 'Enter' });
         });
       }
       await act(async () => {

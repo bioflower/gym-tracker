@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act, within } from '@testing-library/react';
+import { render, screen, fireEvent, act, within, renderHook } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { type ReactNode } from 'react';
@@ -6,6 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import { Navigation } from '../components/Navigation';
 import { TodayPage } from '../pages/TodayPage';
 import { BUTTON_LABELS } from '../constants/workout';
+import { useGymTracker } from '../hooks/useGymTracker';
 
 vi.mock('../api/sync', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api/sync')>();
@@ -84,11 +85,35 @@ describe('useGymTracker actions', () => {
     });
     await act(async () => {
       fireEvent.change(firstCard.getByPlaceholderText('Reps'), { target: { value: '10' } });
+      // Enter key is now required to mark a set as completed (prevents premature completion on blur)
+      fireEvent.keyDown(firstCard.getByPlaceholderText('Reps'), { key: 'Enter' });
     });
     await act(async () => {
       fireEvent.click(firstCard.getByText(BUTTON_LABELS.COMPLETE_EXERCISE));
     });
     expect(firstCard.getByText(BUTTON_LABELS.RESUME_EXERCISE)).toBeInTheDocument();
+  });
+
+  it('workoutHistory is updated immediately after finishWorkout without a page reload', async () => {
+    const { result } = renderHook(() => useGymTracker());
+
+    // Start a workout (uses default plan from getDefaultAppData)
+    act(() => {
+      result.current.startWorkout();
+    });
+    expect(result.current.data.activeWorkout).not.toBeNull();
+
+    // Finish the workout
+    await act(async () => {
+      await result.current.finishWorkout();
+    });
+
+    // Active workout should be cleared
+    expect(result.current.data.activeWorkout).toBeNull();
+
+    // History must update immediately — no page reload or syncFromServer required
+    expect(result.current.data.workoutHistory).toHaveLength(1);
+    expect(result.current.data.workoutHistory[0].status).toBe('completed');
   });
 
   it('swaps today\'s exercise before any set is logged, without touching the saved plan', async () => {

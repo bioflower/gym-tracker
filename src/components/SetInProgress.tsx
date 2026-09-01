@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ExerciseSet, TrackingType, WeightRepSet, WeightUnit, RepsOnlySet, DistanceDurationSet, DistanceUnit } from '../types/gym';
 import { diffSeconds } from '../utils/dateTime';
 import { LiveTimer } from './LiveTimer';
@@ -41,9 +42,9 @@ export function SetInProgress({
   return (
     <div className="current-set-card">
       <span className="set-label">Set {setIndex + 1}</span>
-      {trackingType === 'weight-reps' && renderWeightRepsInput(set as WeightRepSet, defaultWeight, defaultWeightUnit, onUpdate)}
-      {trackingType === 'reps' && renderRepsInput(set, onUpdate)}
-      {trackingType === 'distance-duration' && renderDistanceInput(set, onUpdate)}
+      {trackingType === 'weight-reps' && <WeightRepsInput set={set as WeightRepSet} defaultWeight={defaultWeight} defaultWeightUnit={defaultWeightUnit} onUpdate={onUpdate} />}
+      {trackingType === 'reps' && <RepsInput set={set} onUpdate={onUpdate} />}
+      {trackingType === 'distance-duration' && <DistanceInput set={set} onUpdate={onUpdate} />}
     </div>
   );
 }
@@ -61,14 +62,17 @@ function handleStop(set: ExerciseSet, trackingType: TrackingType, onUpdate: (id:
   }
 }
 
-function renderWeightRepsInput(
-  set: WeightRepSet,
-  defaultWeight: number | null,
-  defaultWeightUnit: WeightUnit,
-  onUpdate: (id: string, u: Partial<ExerciseSet>) => void,
-) {
+function WeightRepsInput({
+  set, defaultWeight, defaultWeightUnit, onUpdate,
+}: {
+  set: WeightRepSet;
+  defaultWeight: number | null;
+  defaultWeightUnit: WeightUnit;
+  onUpdate: (id: string, u: Partial<ExerciseSet>) => void;
+}) {
   const weightValue = set.weight ?? defaultWeight;
   const weightUnit = set.weight !== null ? set.weightUnit : defaultWeightUnit;
+  const [repsDraft, setRepsDraft] = useState(set.reps != null ? String(set.reps) : '');
   return (
     <>
       <div className="set-input-group">
@@ -90,10 +94,21 @@ function renderWeightRepsInput(
         <label htmlFor={`reps-${set.id}`} className="sr-only">Reps</label>
         <input
           id={`reps-${set.id}`} className="input input-small" type="number" min="0" step="1" placeholder="Reps" autoFocus
-          value={set.reps ?? ''}
+          value={repsDraft}
           onChange={e => {
+            setRepsDraft(e.target.value);
             const reps = e.target.value ? parseInt(e.target.value, 10) : null;
-            onUpdate(set.id, { reps, weight: set.weight ?? defaultWeight, weightUnit, completed: reps !== null });
+            onUpdate(set.id, { reps, weight: set.weight ?? defaultWeight, weightUnit });
+          }}
+          onBlur={() => {
+            const reps = repsDraft ? parseInt(repsDraft, 10) : null;
+            if (reps !== null) onUpdate(set.id, { reps, weight: set.weight ?? defaultWeight, weightUnit });
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              const reps = repsDraft ? parseInt(repsDraft, 10) : null;
+              if (reps !== null) onUpdate(set.id, { reps, weight: set.weight ?? defaultWeight, weightUnit, completed: true });
+            }
           }}
         />
       </div>
@@ -101,34 +116,58 @@ function renderWeightRepsInput(
   );
 }
 
-function renderRepsInput(set: ExerciseSet, onUpdate: (id: string, u: Partial<ExerciseSet>) => void) {
+function RepsInput({ set, onUpdate }: { set: ExerciseSet; onUpdate: (id: string, u: Partial<ExerciseSet>) => void }) {
   const s = set as RepsOnlySet;
+  const [draft, setDraft] = useState(s.reps != null ? String(s.reps) : '');
   return (
     <div className="set-input-group">
       <label htmlFor={`reps-${s.id}`} className="sr-only">Reps</label>
       <input
         id={`reps-${s.id}`} className="input input-small" type="number" min="0" step="1" placeholder="Reps" autoFocus
-        value={s.reps ?? ''}
+        value={draft}
         onChange={e => {
+          setDraft(e.target.value);
           const reps = e.target.value ? parseInt(e.target.value, 10) : null;
-          onUpdate(s.id, { reps, completed: reps !== null });
+          onUpdate(s.id, { reps });
+        }}
+        onBlur={() => {
+          const reps = draft ? parseInt(draft, 10) : null;
+          if (reps !== null) onUpdate(s.id, { reps });
+        }}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            const reps = draft ? parseInt(draft, 10) : null;
+            if (reps !== null) onUpdate(s.id, { reps, completed: true });
+          }
         }}
       />
     </div>
   );
 }
 
-function renderDistanceInput(set: ExerciseSet, onUpdate: (id: string, u: Partial<ExerciseSet>) => void) {
+function DistanceInput({ set, onUpdate }: { set: ExerciseSet; onUpdate: (id: string, u: Partial<ExerciseSet>) => void }) {
   const s = set as DistanceDurationSet;
+  const [draft, setDraft] = useState(s.distance != null ? String(s.distance) : '');
   return (
     <div className="set-input-group">
       <label htmlFor={`dist-${s.id}`} className="sr-only">Distance</label>
       <input
         id={`dist-${s.id}`} className="input input-small" type="number" min="0" step="0.1" placeholder="Distance" autoFocus
-        value={s.distance ?? ''}
+        value={draft}
         onChange={e => {
+          setDraft(e.target.value);
           const distance = e.target.value ? parseFloat(e.target.value) : null;
-          onUpdate(s.id, { distance, completed: distance !== null });
+          onUpdate(s.id, { distance });
+        }}
+        onBlur={() => {
+          const distance = draft ? parseFloat(draft) : null;
+          if (distance !== null) onUpdate(s.id, { distance });
+        }}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            const distance = draft ? parseFloat(draft) : null;
+            if (distance !== null) onUpdate(s.id, { distance, completed: true });
+          }
         }}
       />
       <select

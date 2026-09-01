@@ -56,7 +56,7 @@ describe('SetInProgress', () => {
     vi.useRealTimers();
   });
 
-  it('awaiting-input mode for weight-reps pre-fills weight from defaultWeight and completes on reps entry', () => {
+  it('awaiting-input mode for weight-reps pre-fills weight from defaultWeight and completes on Enter key', () => {
     const onUpdate = vi.fn();
     const set: WeightRepSet = {
       id: 'set-1', weight: null, weightUnit: 'kg', reps: null,
@@ -69,11 +69,17 @@ describe('SetInProgress', () => {
       />
     );
     expect(screen.getByDisplayValue('80')).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText('Reps'), { target: { value: '8' } });
-    expect(onUpdate).toHaveBeenCalledWith('set-1', { reps: 8, weight: 80, weightUnit: 'kg', completed: true });
+    fireEvent.change(screen.getByPlaceholderText('Reps'), { target: { value: '134' } });
+    expect(onUpdate).toHaveBeenCalledWith('set-1', { reps: 134, weight: 80, weightUnit: 'kg' });
+    // blur alone must NOT complete the set (the bug: typing "1" then blurring should not complete)
+    fireEvent.blur(screen.getByPlaceholderText('Reps'));
+    expect(onUpdate).not.toHaveBeenCalledWith('set-1', expect.objectContaining({ completed: true }));
+    // pressing Enter must complete the set
+    fireEvent.keyDown(screen.getByPlaceholderText('Reps'), { key: 'Enter' });
+    expect(onUpdate).toHaveBeenCalledWith('set-1', { reps: 134, weight: 80, weightUnit: 'kg', completed: true });
   });
 
-  it('awaiting-input mode for reps-only completes on reps entry with no weight field', () => {
+  it('awaiting-input mode for reps-only completes on Enter key with no weight field', () => {
     const onUpdate = vi.fn();
     const set = { id: 'set-1', reps: null, startedAt: '2026-01-01T00:00:00.000Z', completedAt: '2026-01-01T00:00:05.000Z', completed: false };
     render(
@@ -84,10 +90,16 @@ describe('SetInProgress', () => {
     );
     expect(screen.queryByLabelText('Weight unit')).not.toBeInTheDocument();
     fireEvent.change(screen.getByPlaceholderText('Reps'), { target: { value: '12' } });
+    expect(onUpdate).toHaveBeenCalledWith('set-1', { reps: 12 });
+    // blur alone must NOT complete the set
+    fireEvent.blur(screen.getByPlaceholderText('Reps'));
+    expect(onUpdate).not.toHaveBeenCalledWith('set-1', expect.objectContaining({ completed: true }));
+    // pressing Enter must complete the set
+    fireEvent.keyDown(screen.getByPlaceholderText('Reps'), { key: 'Enter' });
     expect(onUpdate).toHaveBeenCalledWith('set-1', { reps: 12, completed: true });
   });
 
-  it('awaiting-input mode for distance-duration shows only a distance field', () => {
+  it('awaiting-input mode for distance-duration shows only a distance field and completes on Enter', () => {
     const onUpdate = vi.fn();
     const set = {
       id: 'set-1', distance: null, distanceUnit: 'km' as const, durationSeconds: 30, notes: '',
@@ -100,6 +112,12 @@ describe('SetInProgress', () => {
       />
     );
     fireEvent.change(screen.getByPlaceholderText('Distance'), { target: { value: '5' } });
+    expect(onUpdate).toHaveBeenCalledWith('set-1', { distance: 5 });
+    // blur alone must NOT complete the set
+    fireEvent.blur(screen.getByPlaceholderText('Distance'));
+    expect(onUpdate).not.toHaveBeenCalledWith('set-1', expect.objectContaining({ completed: true }));
+    // pressing Enter must complete the set
+    fireEvent.keyDown(screen.getByPlaceholderText('Distance'), { key: 'Enter' });
     expect(onUpdate).toHaveBeenCalledWith('set-1', { distance: 5, completed: true });
   });
 });

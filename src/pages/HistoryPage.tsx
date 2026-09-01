@@ -30,11 +30,18 @@ export function HistoryPage() {
               <p>Exercises: {session.exercises.length}</p>
               {session.exercises.map(ex => (
                 <div key={ex.id} className="history-exercise">
-                  <strong>{ex.exerciseName}</strong>
+                  <div className="history-exercise-header">
+                    <strong>{ex.exerciseName}</strong>
+                    {ex.startedAt && ex.completedAt && (
+                      <span className="history-exercise-duration">
+                        {formatDurationFromDates(ex.startedAt, ex.completedAt)}
+                      </span>
+                    )}
+                  </div>
                   {ex.sets.map((set, i) => (
                     <div key={set.id} className="history-set">
                       Set {i + 1}: {
-                        set.type === 'weight-reps' ? `${set.weight} ${set.weightUnit} × ${set.reps}` :
+                        set.type === 'weight-reps' ? `${set.weight} ${set.weightUnit} × ${set.reps} reps` :
                         set.type === 'reps' ? `${set.reps} reps` :
                         set.type === 'duration' ? `${set.durationSeconds}s` :
                         `${set.distance} ${set.distanceUnit} in ${set.durationSeconds}s`
