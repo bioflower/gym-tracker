@@ -125,8 +125,8 @@ describe('ExerciseCard', () => {
     });
     renderCard(exercise);
     fireEvent.click(document.querySelector('.exercise-card-header')!);
-    expect(screen.getByText(BUTTON_LABELS.COMPLETE_EXERCISE)).toBeInTheDocument();
     expect(screen.getByText(BUTTON_LABELS.RESUME_EXERCISE)).toBeInTheDocument();
+    expect(screen.queryByText(BUTTON_LABELS.COMPLETE_EXERCISE)).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Change exercise')).not.toBeInTheDocument();
   });
 
