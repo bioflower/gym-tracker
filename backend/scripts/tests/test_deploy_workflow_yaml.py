@@ -51,5 +51,24 @@ class DeployWorkflowYamlTests(unittest.TestCase):
         self.assertEqual(workflow["jobs"]["deploy"]["runs-on"], "ubuntu-latest")
 
 
+import json
+from pathlib import Path
+
+
+class ZappaSettingsJsonTests(unittest.TestCase):
+    def test_manage_roles_disabled_with_preprovisioned_role(self):
+        settings_path = (
+            Path(__file__).resolve().parents[2] / "zappa_settings.json"
+        )
+        with open(settings_path) as handle:
+            settings = json.load(handle)
+
+        dev = settings["dev"]
+        self.assertFalse(dev["manage_roles"])
+        self.assertEqual(
+            dev["role_name"], "gym-tracker-dev-ZappaLambdaExecutionRole"
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
