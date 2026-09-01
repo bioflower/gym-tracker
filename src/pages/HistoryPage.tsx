@@ -86,7 +86,7 @@ function getDisplayWorkoutName(
   const counts = new Map<string, number>();
   for (const ex of session.exercises) {
     const def = allExercises.find(e => e.id === ex.exerciseId);
-    let cat: string | null = def?.category ?? null;
+    let cat: string | null = def && (def.category in categoryLabels) ? def.category : null;
     if (!cat) {
       const n = ex.exerciseName.toLowerCase().trim();
       cat = CUSTOM_NAME_TO_CATEGORY[n] ?? LEGACY_ID_TO_CATEGORY[ex.exerciseId] ?? null;
