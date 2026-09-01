@@ -394,19 +394,99 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function deriveWorkoutName(exercises: CompletedExercise[]): string {
   const counts = new Map<string, number>();
+
+  // Fallback for custom UUIDs that have no CATEGORY_LABELS prefix.
+  // Maps lower-cased exerciseName (and legacy IDs) to the correct prefix.
+  const CUSTOM_NAME_TO_PREFIX: Record<string, string> = {
+    // lower-body
+    'barbell deadlift': '0a1b2c3d-0001',
+    'bb deadlift': '0a1b2c3d-0001',
+    'hip abductor': '0a1b2c3d-0001',
+    'barbell calf raise': '0a1b2c3d-0001',
+    'bb calf raise': '0a1b2c3d-0001',
+    'hip adductor': '0a1b2c3d-0001',
+    'barbell hip thrust': '0a1b2c3d-0001',
+    'hip thrust': '0a1b2c3d-0001',
+    'bb hip thrust': '0a1b2c3d-0001',
+    'lying abductor': '0a1b2c3d-0001',
+    'barbell lunge': '0a1b2c3d-0001',
+    'bb lunge': '0a1b2c3d-0001',
+    // chest
+    'cable chest': '0a1b2c3d-0002',
+    // back
+    'm row': '0a1b2c3d-0003',
+    'machine row': '0a1b2c3d-0003',
+    'pull up with band': '0a1b2c3d-0003',
+    'pull-up with band': '0a1b2c3d-0003',
+    // shoulders
+    'barbell shoulder press': '0a1b2c3d-0004',
+    'bb shoulder press': '0a1b2c3d-0004',
+    // arms
+    'cable triceps': '0a1b2c3d-0005',
+    'm triceps': '0a1b2c3d-0005',
+    'machine triceps': '0a1b2c3d-0005',
+    'dumbbell kickback': '0a1b2c3d-0005',
+    'db kickback': '0a1b2c3d-0005',
+    'dip': '0a1b2c3d-0005',
+    'bench dip': '0a1b2c3d-0005',
+    // core
+    'roman chair': '0a1b2c3d-0006',
+    'hanging leg raise': '0a1b2c3d-0006',
+    'leg hand raise': '0a1b2c3d-0006',
+    'swiper': '0a1b2c3d-0006',
+  };
+  const LEGACY_ID_TO_PREFIX: Record<string, string> = {
+    '22b8f305-c618-4cfb-8059-902f1ddcfa35': '0a1b2c3d-0001', // Barbell Deadlift
+    '7ba8cba2-0ffd-49e8-8cb3-6a71c711dffc': '0a1b2c3d-0001', // Hip Abductor
+    'e2343a9f-9658-43b9-b749-9dc21df671ba': '0a1b2c3d-0001', // Barbell Calf Raise
+    '920e29d8-8af9-476a-aff9-8a35ee7c9d7a': '0a1b2c3d-0001', // Hip Adductor
+    '5f918076-a512-450e-bbfd-0585b5e22e72': '0a1b2c3d-0001', // Barbell Hip Thrust
+    '0900256e-cf58-4065-a9f8-fecd61cde06c': '0a1b2c3d-0001', // Lying Abductor
+    'e7ddbbde-8ecc-4ffa-b0c9-68a48d184eec': '0a1b2c3d-0001', // Barbell Lunge (legacy)
+    '6f64f3f3-6190-44de-bca2-079a108358b0': '0a1b2c3d-0001', // Barbell Lunge (import map)
+    'f618489d-ea31-4cb8-9fce-352b8833b54e': '0a1b2c3d-0002', // Cable Chest
+    '3631e61c-8384-4e4e-a49d-8c695d429a9c': '0a1b2c3d-0003', // M Row
+    '3cefe71e-ca52-4308-920a-1e7d17ce626a': '0a1b2c3d-0003', // Pull Up With Band
+    'b110634c-6446-4b60-afa8-8329ec7b8f7c': '0a1b2c3d-0004', // Barbell Shoulder Press
+    '28ccb5da-8695-4aa7-8cf8-98c15513fc62': '0a1b2c3d-0004', // Barbell Shoulder Press (import map)
+    '051b1057-8bd1-44df-ba61-cd5155917d0a': '0a1b2c3d-0005', // Cable Triceps
+    '40f2bfc6-3d02-4443-8926-11745013db41': '0a1b2c3d-0005', // M Triceps
+    '6bcc5175-45da-4d89-91cc-591a554866c2': '0a1b2c3d-0005', // Dumbbell Kickback
+    '76595450-7abe-4cd5-87c2-1ab38f1558a7': '0a1b2c3d-0005', // Dip
+    'b716a208-c0e7-4f98-bc7e-78fce049a1f7': '0a1b2c3d-0005', // Bench Dip
+    '29d7d4e0-d9fc-412e-af0f-28660d94dad4': '0a1b2c3d-0006', // Roman Chair
+    'dbf4f627-87f1-45e3-9101-365aea995229': '0a1b2c3d-0006', // Hanging Leg Raise
+    '5c65498f-fb1a-42be-918f-e5876857d2d2': '0a1b2c3d-0006', // Leg Hand Raise
+    'fac30305-cf51-4375-a371-bb70ff660151': '0a1b2c3d-0006', // Swiper
+    'bb42a962-f062-463a-956e-b38a1438b04e': '0a1b2c3d-0006', // Roman Chair (import map)
+    'd759fb61-e2c2-4f02-ae4e-9199acfe4043': '0a1b2c3d-0006', // Hanging Leg Raise (import map)
+    '0e3e6367-8651-48e1-b2ea-ae7aa2e1caf2': '0a1b2c3d-0006', // Leg Hand Raise (import map)
+    'b75f6964-846f-41e0-b7d2-fa3466060752': '0a1b2c3d-0006', // Swiper (import map)
+    '82cedb28-8ac0-457d-8304-93b2bf797d3e': '0a1b2c3d-0001', // Lying Abductor (import map)
+  };
+
   for (const ex of exercises) {
     let prefix = ex.exerciseId.slice(0, 13); // e.g. "0a1b2c3d-0001"
     if (!CATEGORY_LABELS[prefix]) {
-      // Fallback for known custom IDs or name-based categories (e.g. Barbell Lunge was previously a custom UUID)
       const nameKey = ex.exerciseName.toLowerCase().trim();
-      // Explicit custom-ID fallback (legacy Barbell Lunge UUIDs)
-      const LEGACY_LUNGE_IDS = new Set(['e7ddbbde-8ecc-4ffa-b0c9-68a48d184eec', '6f64f3f3-6190-44de-bca2-079a108358b0']);
-      if (LEGACY_LUNGE_IDS.has(ex.exerciseId) || nameKey === 'barbell lunge' || nameKey === 'bb lunge') {
-        prefix = '0a1b2c3d-0001'; // Lower Body
-      } else if (nameKey.includes('lunge')) {
-        prefix = '0a1b2c3d-0001';
-      } else {
-        continue; // skip truly custom/other exercises
+      prefix = CUSTOM_NAME_TO_PREFIX[nameKey] ?? LEGACY_ID_TO_PREFIX[ex.exerciseId] ?? '';
+      if (!prefix) {
+        // Generic keyword fallbacks for any future custom names
+        if (nameKey.includes('lunge') || nameKey.includes('deadlift') || nameKey.includes('hip thrust') || nameKey.includes('hip abductor') || nameKey.includes('hip adductor') || nameKey.includes('calf raise') || nameKey.includes('abductor')) {
+          prefix = '0a1b2c3d-0001';
+        } else if (nameKey.includes('cable chest') || nameKey.includes('bench press') || nameKey.includes('chest fly')) {
+          prefix = '0a1b2c3d-0002';
+        } else if (nameKey.includes('row') || nameKey.includes('pull') || nameKey.includes('lat')) {
+          prefix = '0a1b2c3d-0003';
+        } else if (nameKey.includes('shoulder press') || nameKey.includes('lateral raise') || nameKey.includes('front raise')) {
+          prefix = '0a1b2c3d-0004';
+        } else if (nameKey.includes('curl') || nameKey.includes('kickback') || nameKey.includes('triceps') || nameKey.includes('tricep') || nameKey.includes('dip') || nameKey.includes('pushdown')) {
+          prefix = '0a1b2c3d-0005';
+        } else if (nameKey.includes('crunch') || nameKey.includes('leg raise') || nameKey.includes('roman chair') || nameKey.includes('swiper') || nameKey.includes('plank') || nameKey.includes('russian twist')) {
+          prefix = '0a1b2c3d-0006';
+        } else {
+          continue; // skip truly unknown custom/other exercises
+        }
       }
     }
     counts.set(prefix, (counts.get(prefix) ?? 0) + 1);
