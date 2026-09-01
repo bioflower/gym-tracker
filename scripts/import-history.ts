@@ -72,7 +72,8 @@ const PRESET_MAP: Record<string, { id: string; name: string; trackingType: Compl
   'db goblet squat':        { id: '0a1b2c3d-0001-4000-8000-000000000002', name: 'Goblet Squat',           trackingType: 'weight-reps' },
   'goblet squat':           { id: '0a1b2c3d-0001-4000-8000-000000000002', name: 'Goblet Squat',           trackingType: 'weight-reps' },
   'db lunge':               { id: '0a1b2c3d-0001-4000-8000-000000000003', name: 'Dumbbell Lunge',         trackingType: 'weight-reps' },
-  'bb lunge': {id: '6f64f3f3-6190-44de-bca2-079a108358b0', name: 'Barbell Lunge', trackingType: 'weight-reps'}, 
+  'bb lunge': {id: '0a1b2c3d-0001-4000-8000-000000000009', name: 'Barbell Lunge', trackingType: 'weight-reps'},
+  'barbell lunge':          { id: '0a1b2c3d-0001-4000-8000-000000000009', name: 'Barbell Lunge',          trackingType: 'weight-reps' },
   'dumbbell lunge':         { id: '0a1b2c3d-0001-4000-8000-000000000003', name: 'Dumbbell Lunge',         trackingType: 'weight-reps' },
   'db romanian deadlift':   { id: '0a1b2c3d-0001-4000-8000-000000000004', name: 'Romanian Deadlift',      trackingType: 'weight-reps' },
   'romanian deadlift':      { id: '0a1b2c3d-0001-4000-8000-000000000004', name: 'Romanian Deadlift',      trackingType: 'weight-reps' },
@@ -394,8 +395,20 @@ const CATEGORY_LABELS: Record<string, string> = {
 function deriveWorkoutName(exercises: CompletedExercise[]): string {
   const counts = new Map<string, number>();
   for (const ex of exercises) {
-    const prefix = ex.exerciseId.slice(0, 13); // e.g. "0a1b2c3d-0001"
-    if (!CATEGORY_LABELS[prefix]) continue;    // skip custom exercises
+    let prefix = ex.exerciseId.slice(0, 13); // e.g. "0a1b2c3d-0001"
+    if (!CATEGORY_LABELS[prefix]) {
+      // Fallback for known custom IDs or name-based categories (e.g. Barbell Lunge was previously a custom UUID)
+      const nameKey = ex.exerciseName.toLowerCase().trim();
+      // Explicit custom-ID fallback (legacy Barbell Lunge UUIDs)
+      const LEGACY_LUNGE_IDS = new Set(['e7ddbbde-8ecc-4ffa-b0c9-68a48d184eec', '6f64f3f3-6190-44de-bca2-079a108358b0']);
+      if (LEGACY_LUNGE_IDS.has(ex.exerciseId) || nameKey === 'barbell lunge' || nameKey === 'bb lunge') {
+        prefix = '0a1b2c3d-0001'; // Lower Body
+      } else if (nameKey.includes('lunge')) {
+        prefix = '0a1b2c3d-0001';
+      } else {
+        continue; // skip truly custom/other exercises
+      }
+    }
     counts.set(prefix, (counts.get(prefix) ?? 0) + 1);
   }
   const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);

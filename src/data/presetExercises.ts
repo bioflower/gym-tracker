@@ -10,6 +10,7 @@ export const presetExercises: Exercise[] = [
   { id: '0a1b2c3d-0001-4000-8000-000000000006', name: 'Leg Press', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
   { id: '0a1b2c3d-0001-4000-8000-000000000007', name: 'Hip Thrust', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
   { id: '0a1b2c3d-0001-4000-8000-000000000008', name: 'Calf Raise', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
+  { id: '0a1b2c3d-0001-4000-8000-000000000009', name: 'Barbell Lunge', category: 'lower-body', trackingType: 'weight-reps', isPreset: true },
   // Chest
   { id: '0a1b2c3d-0002-4000-8000-000000000001', name: 'Push-up', category: 'chest', trackingType: 'reps', isPreset: true },
   { id: '0a1b2c3d-0002-4000-8000-000000000002', name: 'Bench Press', category: 'chest', trackingType: 'weight-reps', isPreset: true },
