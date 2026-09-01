@@ -1,8 +1,15 @@
 import { apiRequest, API_BASE } from './client';
-import type { Exercise, WorkoutDay, WorkoutSession, CompletedExercise, CompletedSet, TrackingType } from '../types/gym';
+import type {
+  Exercise, WorkoutDay, WorkoutSession,
+  CompletedExercise, CompletedSet,
+  WeightUnit, DistanceUnit, TrackingType,
+} from '../types/gym';
 
-/** Shape returned by DRF PageNumberPagination */
-interface Page<T> {
+// ---------------------------------------------------------------------------
+// Pagination
+// ---------------------------------------------------------------------------
+
+interface Paginated<T> {
   count: number;
   next: string | null;
   previous: string | null;
@@ -15,12 +22,12 @@ async function fetchAll<T>(startPath: string): Promise<T[]> {
   let path: string | null = startPath;
   while (path) {
     // eslint-disable-next-line no-await-in-loop
-    const raw = await apiRequest<Page<T> | T[]>(path);
+    const raw = await apiRequest<Paginated<T> | T[]>(path);
     if (Array.isArray(raw)) {
       all.push(...raw);
       path = null;
     } else {
-      const page = raw as Page<T>;
+      const page = raw as Paginated<T>;
       all.push(...page.results);
       path = page.next ? page.next.replace(API_BASE, '') : null;
     }
@@ -28,29 +35,33 @@ async function fetchAll<T>(startPath: string): Promise<T[]> {
   return all;
 }
 
+// ---------------------------------------------------------------------------
+// Exercise catalog
+// ---------------------------------------------------------------------------
+
 interface ServerExercise {
   id: string;
   name: string;
   category: Exercise['category'];
   tracking_type: Exercise['trackingType'];
-  equipment?: string;
+  equipment: string;
   is_preset: boolean;
 }
 
-function toExercise(raw: ServerExercise): Exercise {
+function mapExercise(ex: ServerExercise): Exercise {
   return {
-    id: raw.id,
-    name: raw.name,
-    category: raw.category,
-    trackingType: raw.tracking_type,
-    equipment: raw.equipment,
-    isPreset: raw.is_preset,
+    id: ex.id,
+    name: ex.name,
+    category: ex.category,
+    trackingType: ex.tracking_type,
+    equipment: ex.equipment,
+    isPreset: ex.is_preset,
   };
 }
 
 export async function fetchExercises(): Promise<Exercise[]> {
   const raw = await fetchAll<ServerExercise>('/workouts/exercises/');
-  return raw.map(toExercise);
+  return raw.map(mapExercise);
 }
 
 export async function createExercise(data: Partial<Exercise>): Promise<Exercise> {
@@ -71,6 +82,10 @@ export async function deleteExercise(id: string): Promise<void> {
   return apiRequest<void>(`/workouts/exercises/${id}/`, { method: 'DELETE' });
 }
 
+// ---------------------------------------------------------------------------
+// Workout plan
+// ---------------------------------------------------------------------------
+
 export async function fetchPlan(): Promise<WorkoutDay[]> {
   return apiRequest<WorkoutDay[]>('/workouts/plan/');
 }
@@ -83,18 +98,18 @@ export async function savePlan(days: WorkoutDay[]): Promise<WorkoutDay[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Server → frontend type transformations
-// The DRF API uses snake_case; Django Decimal fields arrive as strings.
+// Sessions — server → frontend transformation
+// DRF uses snake_case; Django DecimalFields arrive as strings.
 // ---------------------------------------------------------------------------
 
-interface ServerSet {
+interface ServerCompletedSet {
   id: string;
-  type: string;
-  weight: string | null;       // DecimalField → string
+  type: CompletedSet['type'];
+  weight: string | null;         // DecimalField → string
   weight_unit: string | null;
   reps: number | null;
   duration_seconds: number | null;
-  distance: string | null;     // DecimalField → string
+  distance: string | null;       // DecimalField → string
   distance_unit: string | null;
   started_at: string | null;
   completed_at: string | null;
@@ -103,12 +118,12 @@ interface ServerSet {
 
 interface ServerCompletedExercise {
   id: string;
-  exercise: string | null;     // FK UUID → exerciseId
+  exercise: string | null;       // FK UUID → exerciseId
   exercise_name: string;
-  tracking_type: string;
+  tracking_type: CompletedExercise['trackingType'];
   started_at?: string | null;
   completed_at?: string | null;
-  sets: ServerSet[];
+  sets: ServerCompletedSet[];
 }
 
 interface ServerSession {
@@ -122,22 +137,23 @@ interface ServerSession {
   exercises: ServerCompletedExercise[];
 }
 
-function toSet(s: ServerSet): CompletedSet {
+function mapSet(s: ServerCompletedSet): CompletedSet {
   return {
     id: s.id,
-    type: s.type as TrackingType,
-    weight:       s.weight   !== null ? parseFloat(s.weight)   : null,
-    weightUnit:   (s.weight_unit   ?? undefined) as 'kg' | 'lb' | undefined,
-    reps:         s.reps,
+    type: s.type,
+    weight:          s.weight   !== null ? Number(s.weight)   : null,
+    weightUnit:      s.weight_unit   as WeightUnit   | null,
+    reps:            s.reps,
     durationSeconds: s.duration_seconds,
-    distance:     s.distance !== null ? parseFloat(s.distance) : null,
-    distanceUnit: (s.distance_unit ?? undefined) as 'km' | 'm' | 'mi' | undefined,
-    startedAt:    s.started_at,
-    completedAt:  s.completed_at,
+    distance:        s.distance !== null ? Number(s.distance) : null,
+    distanceUnit:    s.distance_unit as DistanceUnit | null,
+    startedAt:       s.started_at,
+    completedAt:     s.completed_at,
+    completed:       s.completed,
   };
 }
 
-function toCompletedExercise(e: ServerCompletedExercise): CompletedExercise {
+function mapCompletedExercise(e: ServerCompletedExercise): CompletedExercise {
   return {
     id:            e.id,
     exerciseId:    e.exercise ?? '',
@@ -145,26 +161,26 @@ function toCompletedExercise(e: ServerCompletedExercise): CompletedExercise {
     trackingType:  e.tracking_type as TrackingType,
     startedAt:     e.started_at  ?? null,
     completedAt:   e.completed_at ?? null,
-    sets:          e.sets.map(toSet),
+    sets:          e.sets.map(mapSet),
   };
 }
 
-function toSession(s: ServerSession): WorkoutSession {
+export function mapSession(s: ServerSession): WorkoutSession {
   return {
-    id:             s.id,
-    workoutDayId:   s.workout_day ?? '',
-    workoutName:    s.workout_name,
-    date:           s.date,
-    startedAt:      s.started_at,
-    completedAt:    s.completed_at,
-    status:         s.status,
-    exercises:      s.exercises.map(toCompletedExercise),
+    id:           s.id,
+    workoutDayId: s.workout_day ?? '',
+    workoutName:  s.workout_name,
+    date:         s.date,
+    startedAt:    s.started_at,
+    completedAt:  s.completed_at,
+    status:       s.status,
+    exercises:    s.exercises.map(mapCompletedExercise),
   };
 }
 
 export async function fetchSessions(): Promise<WorkoutSession[]> {
   const raw = await fetchAll<ServerSession>('/workouts/sessions/');
-  return raw.map(toSession);
+  return raw.map(mapSession);
 }
 
 export async function saveSession(session: Partial<WorkoutSession>): Promise<WorkoutSession> {

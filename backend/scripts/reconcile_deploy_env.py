@@ -42,9 +42,25 @@ def resolve_api_gateway_url(
 
 
 def resolve_amplify_url(amplify_client, app_id: str, branch_name: str) -> str:
-    """Return the default (non-custom-domain) URL for an Amplify branch."""
+    """Return the production URL for an Amplify branch.
+
+    Prefers a custom-domain root mapping (e.g. `https://gym.andreado.me`)
+    when the branch is attached to one, falling back to the default
+    `https://<branch>.<defaultDomain>` URL otherwise.
+    """
     app = amplify_client.get_app(appId=app_id)["app"]
     branch = amplify_client.get_branch(appId=app_id, branchName=branch_name)["branch"]
+
+    associations = amplify_client.list_domain_associations(
+        appId=app_id
+    ).get("domainAssociations", [])
+    for association in associations:
+        domain = association["domainName"]
+        for sub_domain in association.get("subDomains", []):
+            setting = sub_domain.get("subDomainSetting", {})
+            if setting.get("branchName") == branch_name and not setting.get("prefix"):
+                return f"https://{domain}"
+
     return f"https://{branch['branchName']}.{app['defaultDomain']}"
 
 

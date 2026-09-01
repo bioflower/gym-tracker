@@ -107,13 +107,14 @@ export interface CompletedSet {
   id: string;
   type: TrackingType;
   weight?: number | null;
-  weightUnit?: WeightUnit;
+  weightUnit?: WeightUnit | null;
   reps?: number | null;
   durationSeconds?: number | null;
   distance?: number | null;
-  distanceUnit?: DistanceUnit;
+  distanceUnit?: DistanceUnit | null;
   startedAt?: string | null;
   completedAt?: string | null;
+  completed?: boolean;
 }
 
 export interface CompletedExercise {

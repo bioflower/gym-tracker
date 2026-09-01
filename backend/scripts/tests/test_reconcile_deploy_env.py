@@ -58,6 +58,7 @@ class ResolveAmplifyUrlTests(unittest.TestCase):
             "app": {"appId": "d123456abcdef", "defaultDomain": "d123456abcdef.amplifyapp.com"}
         }
         client.get_branch.return_value = {"branch": {"branchName": "main"}}
+        client.list_domain_associations.return_value = {"domainAssociations": []}
 
         url = resolve_amplify_url(client, "d123456abcdef", "main")
 
@@ -66,6 +67,64 @@ class ResolveAmplifyUrlTests(unittest.TestCase):
         client.get_branch.assert_called_once_with(
             appId="d123456abcdef", branchName="main"
         )
+
+    def test_prefers_custom_domain_root_for_branch(self):
+        client = MagicMock()
+        client.get_app.return_value = {
+            "app": {"appId": "d123456abcdef", "defaultDomain": "d123456abcdef.amplifyapp.com"}
+        }
+        client.get_branch.return_value = {"branch": {"branchName": "main"}}
+        client.list_domain_associations.return_value = {
+            "domainAssociations": [
+                {
+                    "domainName": "gym.andreado.me",
+                    "subDomains": [
+                        {
+                            "subDomainSetting": {
+                                "prefix": "www",
+                                "branchName": "main",
+                            },
+                        },
+                        {
+                            "subDomainSetting": {
+                                "prefix": "",
+                                "branchName": "main",
+                            },
+                        },
+                    ],
+                }
+            ]
+        }
+
+        url = resolve_amplify_url(client, "d123456abcdef", "main")
+
+        self.assertEqual(url, "https://gym.andreado.me")
+
+    def test_ignores_custom_domain_when_branch_not_mapped(self):
+        client = MagicMock()
+        client.get_app.return_value = {
+            "app": {"appId": "d123456abcdef", "defaultDomain": "d123456abcdef.amplifyapp.com"}
+        }
+        client.get_branch.return_value = {"branch": {"branchName": "staging"}}
+        client.list_domain_associations.return_value = {
+            "domainAssociations": [
+                {
+                    "domainName": "gym.andreado.me",
+                    "subDomains": [
+                        {
+                            "subDomainSetting": {
+                                "prefix": "www",
+                                "branchName": "main",
+                            }
+                        }
+                    ],
+                }
+            ]
+        }
+
+        url = resolve_amplify_url(client, "d123456abcdef", "staging")
+
+        self.assertEqual(url, "https://staging.d123456abcdef.amplifyapp.com")
 
 
 class ReconcileAmplifyEnvVarTests(unittest.TestCase):
