@@ -100,7 +100,7 @@ export function ExerciseCard({
                 />
               ) : lastCompletedSet ? (
                 <>
-                  <RestTimer previousCompletedAt={lastCompletedSet.completedAt!} onStartNext={onAddSet} />
+                  <RestTimer previousCompletedAt={lastCompletedSet.completedAt!} />
                   <div className='exercise-actions'>
                     <button 
                       className='btn btn-primary btn-small'

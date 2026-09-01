@@ -2,7 +2,6 @@ import { LiveTimer } from './LiveTimer';
 
 interface RestTimerProps {
   previousCompletedAt: string;
-  onStartNext: () => void;
 }
 
 export function RestTimer({ previousCompletedAt }: RestTimerProps) {
