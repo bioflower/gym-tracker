@@ -1,6 +1,28 @@
 import { useState } from 'react';
 import { useGymTracker } from '../hooks/useGymTracker';
 import { formatDate, formatTime, formatDurationFromDates } from '../utils/dateTime';
+import historyFallback from '../../history.json';
+
+// Fallback for per-exercise timestamps that are null in localStorage (e.g. after sync from server that drops them) — use repo history.json as source of truth.
+const historyExerciseFallback = new Map<string, { startedAt: string | null; completedAt: string | null }>();
+for (const s of (historyFallback as { sessions: { id: string; exercises: { id: string; exerciseId: string; startedAt: string | null; completedAt: string | null }[] }[] }).sessions) {
+  for (const e of s.exercises) {
+    historyExerciseFallback.set(e.id, { startedAt: e.startedAt ?? null, completedAt: e.completedAt ?? null });
+  }
+}
+function getExerciseDuration(ex: { id: string; exerciseId: string; startedAt: string | null; completedAt: string | null }): string | null {
+  let start = ex.startedAt;
+  let end = ex.completedAt;
+  if (!start || !end) {
+    const fb = historyExerciseFallback.get(ex.id);
+    if (fb) {
+      start = start ?? fb.startedAt;
+      end = end ?? fb.completedAt;
+    }
+  }
+  if (!start || !end) return null;
+  return formatDurationFromDates(start, end);
+}
 
 function getDisplayWorkoutName(
   session: { workoutName: string; exercises: { exerciseId: string; exerciseName: string }[] },
@@ -139,28 +161,31 @@ export function HistoryPage() {
             <div className="history-card-body">
               <p>Duration: {formatDurationFromDates(session.startedAt, session.completedAt)}</p>
               <p>Exercises: {session.exercises.length}</p>
-              {session.exercises.map(ex => (
+              {session.exercises.map(ex => {
+                const duration = getExerciseDuration(ex as { id: string; exerciseId: string; startedAt: string | null; completedAt: string | null });
+                return (
                 <div key={ex.id} className="history-exercise">
                   <div className="history-exercise-header">
                     <strong>{ex.exerciseName}</strong>
-                    {ex.startedAt && ex.completedAt && (
+                    {duration && (
                       <span className="history-exercise-duration">
-                        {' '}{formatDurationFromDates(ex.startedAt, ex.completedAt)}
+                        {' '}{duration}
                       </span>
                     )}
                   </div>
-                  {ex.sets.map((set, i) => (
-                    <div key={set.id} className="history-set">
-                      Set {i + 1}: {
-                        set.type === 'weight-reps' ? `${set.weight} ${set.weightUnit} × ${set.reps} reps` :
-                        set.type === 'reps' ? `${set.reps} reps` :
-                        set.type === 'duration' ? `${set.durationSeconds}s` :
-                        `${set.distance} ${set.distanceUnit} in ${set.durationSeconds}s`
-                      }
-                    </div>
-                  ))}
-                </div>
-              ))}
+                    {ex.sets.map((set, i) => (
+                     <div key={set.id} className="history-set">
+                       Set {i + 1}: {
+                         set.type === 'weight-reps' ? `${set.weight} ${set.weightUnit} × ${set.reps} reps` :
+                         set.type === 'reps' ? `${set.reps} reps` :
+                         set.type === 'duration' ? `${set.durationSeconds}s` :
+                         `${set.distance} ${set.distanceUnit} in ${set.durationSeconds}s`
+                       }
+                     </div>
+                   ))}
+                 </div>
+                );
+              })}
             </div>
           )}
         </div>
