@@ -316,6 +316,17 @@ a {
 .history-meta { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-xs); }
 .history-card-body { padding: 0 var(--space-md) var(--space-md); border-top: 1px solid var(--border); padding-top: var(--space-md); }
 .history-exercise { margin-top: var(--space-sm); }
+.history-exercise-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.history-exercise-duration {
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
 .history-set { font-size: 0.85rem; color: var(--text-secondary); padding-left: var(--space-md); }
 
 /* Today page */
