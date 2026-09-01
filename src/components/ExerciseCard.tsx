@@ -22,7 +22,7 @@ export function ExerciseCard({
   exercise, workoutHistory, allExercises, onSetDone, onUpdateSet, onAddSet, onRemoveSet, onSwapExercise,
 }: ExerciseCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const previousResult = findMostRecentExerciseResult(workoutHistory, exercise.exerciseId);
+  const previousResult = findMostRecentExerciseResult(workoutHistory, exercise.exerciseId, exercise.exerciseName);
   const lastPreviousSet = previousResult?.sets[previousResult.sets.length - 1] ?? null;
   const defaultWeight = lastPreviousSet?.type === 'weight-reps' ? (lastPreviousSet.weight ?? null) : null;
   const defaultWeightUnit = lastPreviousSet?.type === 'weight-reps' ? (lastPreviousSet.weightUnit ?? 'kg') : 'kg';

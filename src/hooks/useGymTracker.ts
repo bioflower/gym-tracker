@@ -49,6 +49,15 @@ export function useGymTracker() {
       // offline or server error — keep local cache
     }
 
+    // Ensure sessions are newest-first for findMostRecentExerciseResult
+    const sortedSessions = sessions.length > 0
+      ? [...sessions].sort((a, b) => {
+          const dateCmp = b.date.localeCompare(a.date);
+          if (dateCmp !== 0) return dateCmp;
+          return (b.completedAt ?? '').localeCompare(a.completedAt ?? '');
+        })
+      : [];
+
     setData(prev => ({
       ...prev,
       ...(exercises ? {
@@ -56,7 +65,7 @@ export function useGymTracker() {
         customExercises: exercises.filter(e => !e.isPreset),
       } : {}),
       ...(plan && plan.length > 0 ? { workoutPlan: plan } : {}),
-      ...(sessions.length > 0 ? { workoutHistory: sessions } : {}),
+      ...(sortedSessions.length > 0 ? { workoutHistory: sortedSessions } : {}),
     }));
   }
 
