@@ -89,9 +89,9 @@ creates/deletes IAM roles (the Lambda execution role is pre-provisioned, see B).
 }
 ```
 
-> `events:*` covers zappa's default `keep_warm` scheduled invocations. If a
-> missing action surfaces during verification, add just that action rather than
-> widening to `*` globally.
+> The enumerated `events:` actions cover zappa's default `keep_warm` scheduled
+> invocations. If a missing action surfaces during verification, add just that
+> action rather than widening to `*` globally.
 
 ## B. Lambda execution role — `gym-tracker-dev-ZappaLambdaExecutionRole`
 

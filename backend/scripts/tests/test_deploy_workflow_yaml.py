@@ -1,3 +1,4 @@
+import json
 import unittest
 from pathlib import Path
 
@@ -43,16 +44,17 @@ class DeployWorkflowYamlTests(unittest.TestCase):
         self.assertIn("build_lambda_deps.sh", full_run)
         self.assertIn("zappa update", full_run)
         self.assertIn("manage.py migrate", full_run)
+        self.assertTrue(
+            full_run.index("build_lambda_deps.sh")
+            < full_run.index("manage.py migrate")
+            < full_run.index("zappa update")
+        )
 
     def test_deploy_job_runs_on_ubuntu(self):
         with open(WORKFLOW_PATH) as handle:
             workflow = yaml.safe_load(handle)
 
         self.assertEqual(workflow["jobs"]["deploy"]["runs-on"], "ubuntu-latest")
-
-
-import json
-from pathlib import Path
 
 
 class ZappaSettingsJsonTests(unittest.TestCase):
