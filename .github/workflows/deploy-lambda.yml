@@ -54,7 +54,6 @@ jobs:
           role-to-assume: arn:aws:iam::214182382176:role/gym-tracker-github-deploy
           audience: sts.amazonaws.com
           aws-region: us-east-1
-          aws-profile: gym-tracker-admin
           output-env-credentials: true
 
       - name: Build Lambda dependencies (Docker)
