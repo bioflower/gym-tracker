@@ -10,6 +10,14 @@ on:
         type: choice
         options: [dev]
 
+  # TEMPORARY: allows testing before this workflow exists on main
+  push:
+    branches:
+      - feat/docker-lambda-deploy
+
+env: 
+  ZAPPA_STAGE: ${{ inputs.stage || 'dev' }}
+
 permissions:
   id-token: write
   contents: read
@@ -54,10 +62,10 @@ jobs:
 
       - name: Deploy with Zappa
         working-directory: backend
-        run: ./.venv-lambda/bin/zappa update ${{ inputs.stage }}
+        run: ./.venv-lambda/bin/zappa update ${{ env.ZAPPA_STAGE }}
 
       - name: Verify deployment
         run: |
-          STATE=$(aws lambda get-function-configuration --function-name gym-tracker-${{ inputs.stage }} --query State --output text)
+          STATE=$(aws lambda get-function-configuration --function-name gym-tracker-${{ env.ZAPPA_STAGE }} --query State --output text)
           echo "Lambda state: $STATE"
           [ "$STATE" = "Active" ]
