@@ -72,7 +72,9 @@ jobs:
 
       - name: Deploy with Zappa
         working-directory: backend
-        run: ./.venv-lambda/bin/zappa update ${{ env.ZAPPA_STAGE }}
+        run: | 
+          source .venv-lambda/bin/activate
+          ./.venv-lambda/bin/zappa update ${{ env.ZAPPA_STAGE }}
 
       - name: Verify deployment
         run: |
