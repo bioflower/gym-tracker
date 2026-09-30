@@ -1,0 +1,114 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadGymTrackerDevParameters",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath"
+      ],
+      "Resource": [
+        "arn:aws:ssm:us-east-1:214182382176:parameter/gym-tracker/dev",
+        "arn:aws:ssm:us-east-1:214182382176:parameter/gym-tracker/dev/*"
+      ]
+    },
+    {
+      "Sid": "ManageGymTrackerLambda",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:GetPolicy",
+        "lambda:AddPermission",
+        "lambda:RemovePermission",
+        "lambda:UpdateFunctionCode",
+        "lambda:UpdateFunctionConfiguration",
+        "lambda:DeleteFunctionConcurrency",
+        "lambda:PublishVersion",
+        "lambda:ListVersionsByFunction",
+        "lambda:ListAliases",
+        "lambda:GetAlias",
+        "lambda:CreateAlias",
+        "lambda:UpdateAlias"
+      ],
+      "Resource": "arn:aws:lambda:us-east-1:214182382176:function:gym-tracker-dev*"
+    },
+    {
+      "Sid": "ZappaDeploymentBucket",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::gym-tracker-zappa-dev",
+        "arn:aws:s3:::gym-tracker-zappa-dev/*"
+      ]
+    },
+    {
+      "Sid": "PassOnlyGymTrackerExecutionRole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::214182382176:role/gym-tracker-dev-ZappaLambdaExecutionRole",
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": [
+            "lambda.amazonaws.com",
+            "events.amazonaws.com"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "ManageGymTrackerCloudFormationStack",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:DescribeStacks",
+        "cloudformation:DescribeStackResource",
+        "cloudformation:UpdateStack"
+      ],
+      "Resource": "arn:aws:cloudformation:us-east-1:214182382176:stack/gym-tracker-dev/*"
+    },
+    {
+      "Sid": "ManageGymTrackerApiGateway",
+      "Effect": "Allow",
+      "Action": [
+        "apigateway:GET",
+        "apigateway:PATCH",
+        "apigateway:POST"
+      ],
+      "Resource": "arn:aws:apigateway:us-east-1::/restapis/iik11anqk4*"
+    },
+    {
+      "Sid": "DiscoverGymTrackerEventRules",
+      "Effect": "Allow",
+      "Action": [
+        "events:ListRuleNamesByTarget"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageGymTrackerEventRules",
+      "Effect": "Allow",
+      "Action": [
+        "events:ListTargetsByRule",
+        "events:RemoveTargets",
+        "events:PutTargets",
+        "events:DeleteRule",
+        "events:PutRule"
+      ],
+      "Resource": "arn:aws:events:us-east-1:214182382176:rule/gym-tracker-dev-*"
+    },
+    {
+      "Sid": "ReadGymTrackerExecutionRole",
+      "Effect": "Allow",
+      "Action": "iam:GetRole",
+      "Resource": "arn:aws:iam::214182382176:role/gym-tracker-dev-ZappaLambdaExecutionRole"
+    }
+  ]
+}

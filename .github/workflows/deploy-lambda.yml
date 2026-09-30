@@ -10,11 +10,6 @@ on:
         type: choice
         options: [dev]
 
-  # TEMPORARY: allows testing before this workflow exists on main
-  push:
-    branches:
-      - feat/docker-lambda-deploy
-
 env: 
   ZAPPA_STAGE: ${{ inputs.stage || 'dev' }}
 
@@ -36,17 +31,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Inspect GitHub OIDC claims
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const token = await core.getIDToken('sts.amazonaws.com');
-            const payload = JSON.parse(
-              Buffer.from(token.split('.')[1], 'base64url').toString()
-            );
-            console.log('aud:', payload.aud);
-            console.log('sub:', payload.sub);
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
