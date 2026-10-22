@@ -16,11 +16,12 @@ interface ExerciseCardProps {
   onUpdateSet: (setId: string, updates: Partial<ExerciseSet>) => void;
   onAddSet: () => void;
   onRemoveSet: (setId: string) => void;
+  onReset: () => void;
   onSwapExercise: (newExerciseId: string) => void;
 }
 
 export function ExerciseCard({
-  exercise, workoutHistory, allExercises, onSetDone, onUpdateSet, onAddSet, onRemoveSet, onSwapExercise,
+  exercise, workoutHistory, allExercises, onSetDone, onUpdateSet, onAddSet, onRemoveSet, onReset, onSwapExercise,
 }: ExerciseCardProps) {
   const [expanded, setExpanded] = useState(false);
   const previousResult = findMostRecentExerciseResult(workoutHistory, exercise.exerciseId, exercise.exerciseName);
@@ -44,6 +45,17 @@ export function ExerciseCard({
           <span className="exercise-meta">{trackingLabel(exercise.trackingType)}</span>
         </div>
         <div className="exercise-status">
+          {(exercise.startedAt || exercise.completed) && (
+            <button
+              className="btn btn-small btn-outline"
+              onClick={e => {
+                e.stopPropagation();
+                if (window.confirm(`Reset ${exercise.exerciseName}? All sets recorded for it will be cleared.`)) onReset();
+              }}
+            >
+              Reset exercise
+            </button>
+          )}
           {exercise.completed ? (
             <span className="badge badge-success">Done</span>
           ) : exercise.startedAt ? (

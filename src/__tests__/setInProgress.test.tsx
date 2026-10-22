@@ -164,6 +164,28 @@ describe('SetInProgress', () => {
     expect(onUpdate).toHaveBeenCalledWith('set-2', { reps: 8, weight: 60, weightUnit: 'lb', completed: true });
   });
 
+  it('lets the user delete every digit of a prefilled 2-digit rep count', () => {
+    function Harness() {
+      const [set, setSet] = useState<WeightRepSet>({
+        id: 'set-2', weight: null, weightUnit: 'kg', reps: null,
+        startedAt: '2026-01-01T00:00:00.000Z', completedAt: '2026-01-01T00:00:05.000Z', completed: false,
+      });
+      return (
+        <SetInProgress
+          mode="awaiting-input" set={set} trackingType="weight-reps" setIndex={1}
+          defaultWeight={60} defaultWeightUnit="kg" defaultReps={12} onStart={() => {}}
+          onUpdate={(_, u) => setSet(s => ({ ...s, ...u }) as WeightRepSet)}
+        />
+      );
+    }
+    render(<Harness />);
+    const reps = screen.getByPlaceholderText('Reps') as HTMLInputElement;
+    expect(reps.value).toBe('12');
+    fireEvent.change(reps, { target: { value: '1' } });
+    fireEvent.change(reps, { target: { value: '' } });
+    expect(reps.value).toBe('');
+  });
+
   it('awaiting-input mode for reps-only completes on Enter key with no weight field', () => {
     const onUpdate = vi.fn();
     const set = { id: 'set-1', reps: null, startedAt: '2026-01-01T00:00:00.000Z', completedAt: '2026-01-01T00:00:05.000Z', completed: false };
