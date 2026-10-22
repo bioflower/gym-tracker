@@ -103,6 +103,9 @@ describe('useGymTracker actions', () => {
       result.current.startWorkout();
     });
     expect(result.current.data.activeWorkout).not.toBeNull();
+    act(() => {
+      result.current.setExerciseDone(result.current.data.activeWorkout!.exercises[0].id, true);
+    });
 
     // Finish the workout
     await act(async () => {

@@ -155,8 +155,34 @@ function getDisplayWorkoutName(
   return session.workoutName;
 }
 
+function HistoryNameInput({ name, onSave }: { name: string; onSave: (name: string) => void }) {
+  const [value, setValue] = useState(name);
+  return (
+    <input
+      className="history-name-input"
+      aria-label="Workout name"
+      value={value}
+      maxLength={200}
+      onClick={e => e.stopPropagation()}
+      onChange={e => setValue(e.target.value)}
+      onBlur={() => {
+        const next = value.trim();
+        if (next && next !== name) onSave(next);
+        else setValue(name);
+      }}
+      onKeyDown={e => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+        if (e.key === 'Escape') {
+          setValue(name);
+          e.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
+
 export function HistoryPage() {
-  const { data } = useGymTracker();
+  const { data, renameSession } = useGymTracker();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const allExercises = [...data.presetExercises, ...data.customExercises];
 
@@ -168,7 +194,11 @@ export function HistoryPage() {
         <div key={session.id} className="history-card">
           <div className="history-card-header" onClick={() => setExpandedId(expandedId === session.id ? null : session.id)}>
             <div>
-              <strong>{getDisplayWorkoutName(session, allExercises)}</strong>
+              <HistoryNameInput
+                key={session.workoutName}
+                name={getDisplayWorkoutName(session, allExercises)}
+                onSave={name => void renameSession(session.id, name)}
+              />
               <span className="history-date">{formatDate(session.date)}</span>
             </div>
             <div className="history-meta">

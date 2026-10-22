@@ -7,6 +7,7 @@ from .models import Exercise, WorkoutDay, WorkoutSession
 from .serializers import (
     ExerciseSerializer,
     WorkoutDaySerializer,
+    WorkoutSessionNameSerializer,
     WorkoutSessionSerializer,
 )
 
@@ -67,3 +68,14 @@ class SessionListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer: WorkoutSessionSerializer) -> None:
         """Assign the session to the currently authenticated user."""
         serializer.save(user=self.request.user)
+
+
+class SessionDetailView(generics.UpdateAPIView):
+    """Rename one of the user's workout sessions (PATCH workout_name)."""
+
+    serializer_class = WorkoutSessionNameSerializer
+    http_method_names = ["patch", "options"]
+
+    def get_queryset(self) -> QuerySet[WorkoutSession]:
+        """Scope to only the authenticated user's sessions."""
+        return WorkoutSession.objects.filter(user=self.request.user)

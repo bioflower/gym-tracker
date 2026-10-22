@@ -6,4 +6,5 @@ urlpatterns = [
     path("exercises/<uuid:pk>/", views.ExerciseDetailView.as_view(), name="exercise-detail"),
     path("plan/", views.PlanGetUpdateView.as_view(), name="plan"),
     path("sessions/", views.SessionListCreateView.as_view(), name="session-list"),
+    path("sessions/<uuid:pk>/", views.SessionDetailView.as_view(), name="session-detail"),
 ]

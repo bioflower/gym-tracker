@@ -425,3 +425,17 @@ a {
   white-space: nowrap;
   border-width: 0;
 }
+
+.history-name-input {
+  width: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  margin-left: calc(-1 * var(--space-sm));
+  border: 1px solid transparent;
+  border-radius: var(--radius-small);
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 700;
+  cursor: text;
+}
+.history-name-input:hover { border-color: var(--border); }
+.history-name-input:focus { border-color: var(--text-primary); background: var(--surface); outline: none; }

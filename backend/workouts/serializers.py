@@ -85,12 +85,13 @@ class CompletedExerciseSerializer(serializers.ModelSerializer):
 class WorkoutSessionSerializer(serializers.ModelSerializer):
     """Serializer for workout sessions with nested exercises and sets."""
 
+    id = serializers.UUIDField(required=False)
     exercises = CompletedExerciseSerializer(many=True, required=False)
 
     class Meta:
         model = WorkoutSession
         fields = "__all__"
-        read_only_fields = ("id", "user")
+        read_only_fields = ("user",)
 
     def create(self, validated_data: dict) -> WorkoutSession:
         """Create a full workout session including its nested exercises and sets."""
@@ -103,3 +104,12 @@ class WorkoutSessionSerializer(serializers.ModelSerializer):
             for s_data in sets_data:
                 CompletedSet.objects.create(completed_exercise=ce, **s_data)
         return session
+
+
+class WorkoutSessionNameSerializer(serializers.ModelSerializer):
+    """Rename-only serializer for a workout session."""
+
+    class Meta:
+        model = WorkoutSession
+        fields = ("id", "workout_name")
+        read_only_fields = ("id",)
