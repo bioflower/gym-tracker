@@ -5,6 +5,7 @@ Defines authentication endpoints:
 - login     – obtain a JWT token pair
 - refresh   – refresh an expired access token
 - me        – retrieve the authenticated user's profile
+- change-password – change the authenticated user's password
 """
 
 from django.urls import URLPattern, path
@@ -17,4 +18,5 @@ urlpatterns: list[URLPattern] = [
     path("login/", TokenObtainPairView.as_view(), name="login"),
     path("refresh/", TokenRefreshView.as_view(), name="refresh"),
     path("me/", views.MeView.as_view(), name="me"),
+    path("change-password/", views.ChangePasswordView.as_view(), name="change-password"),
 ]
