@@ -21,9 +21,6 @@ export function Navigation() {
       <NavLink to="/one-rep-max" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
         1RM
       </NavLink>
-      <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-        Settings
-      </NavLink>
       <button className="nav-link logout-btn" onClick={logout}>
         Logout
       </button>
