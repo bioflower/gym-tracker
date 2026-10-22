@@ -3,6 +3,9 @@ import { WorkoutHeader } from '../components/WorkoutHeader';
 import { ExerciseCard } from '../components/ExerciseCard';
 import { WorkoutCompletionModal } from '../components/WorkoutCompletionModal';
 import { useState } from 'react';
+import { findMostRecentExerciseResult } from '../utils/exerciseHistory';
+import { suggestSet, formatSuggestion } from '../utils/progression';
+import { getTodayISO } from '../utils/dateTime';
 
 export function TodayPage() {
   const {
@@ -22,11 +25,21 @@ export function TodayPage() {
   }
 
   if (!active) {
+    const doneToday = data.workoutHistory.some(s => s.status === 'completed' && s.date === getTodayISO());
     return (
       <div className="today-page">
         <div className="workout-preview">
-          <h1>{workout.name}</h1>
+          {doneToday && <h1>Today&apos;s workout is done 🎉</h1>}
+          {doneToday ? <h2>Next workout - {workout.name}</h2> : <h1>{workout.name}</h1>}
           <p>{workout.exercises.length} exercises</p>
+          <ul className="next-workout-list">
+            {workout.exercises.map(ex => {
+              const def = getAllExercises().find(e => e.id === ex.exercise);
+              const last = def ? findMostRecentExerciseResult(data.workoutHistory, def.id, def.name) : null;
+              const text = def && formatSuggestion(def.trackingType, suggestSet(def.trackingType, last?.sets[0] ?? null, true));
+              return <li key={ex.id}>{def?.name ?? 'Unknown'}{text && `: ${text}`}</li>;
+            })}
+          </ul>
           <button className="btn btn-primary btn-large" onClick={startWorkout}>
             Start Workout
           </button>

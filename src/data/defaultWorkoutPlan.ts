@@ -4,7 +4,7 @@ export function getDefaultWorkoutPlan(): WorkoutDay[] {
   return [
     {
       id: 'workout-a',
-      name: 'Workout A',
+      name: 'Full Body: Lunge & Press',
       position: 0,
       exercises: [
         { id: 'plan-a-1', exercise: '0a1b2c3d-0001-4000-8000-000000000003', position: 0, target_sets: 3 },
@@ -15,7 +15,7 @@ export function getDefaultWorkoutPlan(): WorkoutDay[] {
     },
     {
       id: 'workout-b',
-      name: 'Workout B',
+      name: 'Full Body: Hip Thrust & Row',
       position: 1,
       exercises: [
         { id: 'plan-b-1', exercise: '0a1b2c3d-0001-4000-8000-000000000007', position: 0, target_sets: 3 },
@@ -26,7 +26,7 @@ export function getDefaultWorkoutPlan(): WorkoutDay[] {
     },
     {
       id: 'workout-c',
-      name: 'Workout C',
+      name: 'Full Body: Squat & Pulldown',
       position: 2,
       exercises: [
         { id: 'plan-c-1', exercise: '0a1b2c3d-0001-4000-8000-000000000005', position: 0, target_sets: 3 },
