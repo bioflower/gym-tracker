@@ -1,9 +1,77 @@
+import { useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { SetInProgress } from '../components/SetInProgress';
-import type { DurationSet, WeightRepSet } from '../types/gym';
+import type { DurationSet, WeightRepSet, WeightUnit } from '../types/gym';
+
+function WeightInputHarness({ defaultWeightUnit = 'kg' }: { defaultWeightUnit?: WeightUnit }) {
+  const [set, setSet] = useState<WeightRepSet>({
+    id: 'set-1', weight: null, weightUnit: 'kg', reps: null,
+    startedAt: '2026-01-01T00:00:00.000Z', completedAt: '2026-01-01T00:00:05.000Z', completed: false,
+  });
+  return (
+    <>
+      <SetInProgress
+        mode="awaiting-input" set={set} trackingType="weight-reps" setIndex={0}
+        defaultWeight={36} defaultWeightUnit={defaultWeightUnit} onStart={() => {}}
+        onUpdate={(_id, updates) => setSet(previous => ({ ...previous, ...updates }))}
+      />
+      <output aria-label="Saved set">{JSON.stringify(set)}</output>
+    </>
+  );
+}
 
 describe('SetInProgress', () => {
+  it('allows deleting all digits of the default weight and replacing it with 20', async () => {
+    const user = userEvent.setup();
+    render(<WeightInputHarness />);
+    const weight = screen.getByLabelText('Weight');
+    await user.click(weight);
+    await user.keyboard('{Backspace}{Backspace}');
+    expect(weight).toHaveValue(null);
+    await user.type(weight, '20');
+    await user.type(screen.getByLabelText('Reps'), '10{Enter}');
+    expect(weight).toHaveValue(20);
+    expect(JSON.parse(screen.getByLabelText('Saved set').textContent!)).toMatchObject({
+      weight: 20, weightUnit: 'kg', reps: 10, completed: true,
+    });
+  });
+
+  it('keeps a unit change made before entering weight when completing the set', async () => {
+    const user = userEvent.setup();
+    render(<WeightInputHarness />);
+    await user.selectOptions(screen.getByLabelText('Weight unit'), 'lb');
+    expect(screen.getByLabelText('Weight unit')).toHaveValue('lb');
+    await user.type(screen.getByLabelText('Reps'), '10{Enter}');
+    expect(JSON.parse(screen.getByLabelText('Saved set').textContent!)).toMatchObject({
+      weight: 36, weightUnit: 'lb', reps: 10, completed: true,
+    });
+  });
+
+  it('does not restore the default weight when reps are entered after clearing weight', async () => {
+    const user = userEvent.setup();
+    render(<WeightInputHarness />);
+    await user.clear(screen.getByLabelText('Weight'));
+    await user.type(screen.getByLabelText('Reps'), '10{Enter}');
+    expect(screen.getByLabelText('Weight')).toHaveValue(null);
+    expect(JSON.parse(screen.getByLabelText('Saved set').textContent!)).toMatchObject({
+      weight: null, reps: 10, completed: true,
+    });
+  });
+
+  it('preserves the historical unit when editing the default weight down to zero', async () => {
+    const user = userEvent.setup();
+    render(<WeightInputHarness defaultWeightUnit="lb" />);
+    await user.clear(screen.getByLabelText('Weight'));
+    await user.type(screen.getByLabelText('Weight'), '0');
+    expect(screen.getByLabelText('Weight unit')).toHaveValue('lb');
+    await user.type(screen.getByLabelText('Reps'), '10{Enter}');
+    expect(JSON.parse(screen.getByLabelText('Saved set').textContent!)).toMatchObject({
+      weight: 0, weightUnit: 'lb', reps: 10, completed: true,
+    });
+  });
+
   it('idle mode renders a Start button and calls onStart', () => {
     const onStart = vi.fn();
     render(
@@ -70,7 +138,7 @@ describe('SetInProgress', () => {
     );
     expect(screen.getByDisplayValue('80')).toBeInTheDocument();
     fireEvent.change(screen.getByPlaceholderText('Reps'), { target: { value: '134' } });
-    expect(onUpdate).toHaveBeenCalledWith('set-1', { reps: 134, weight: 80, weightUnit: 'kg' });
+    expect(onUpdate).toHaveBeenCalledExactlyOnceWith('set-1', { reps: 134 });
     // blur alone must NOT complete the set (the bug: typing "1" then blurring should not complete)
     fireEvent.blur(screen.getByPlaceholderText('Reps'));
     expect(onUpdate).not.toHaveBeenCalledWith('set-1', expect.objectContaining({ completed: true }));
@@ -84,7 +152,7 @@ describe('SetInProgress', () => {
     const set = { id: 'set-1', reps: null, startedAt: '2026-01-01T00:00:00.000Z', completedAt: '2026-01-01T00:00:05.000Z', completed: false };
     render(
       <SetInProgress
-        mode="awaiting-input" set={set as never} trackingType="reps" setIndex={0}
+        mode="awaiting-input" set={set} trackingType="reps" setIndex={0}
         defaultWeight={null} defaultWeightUnit="kg" onStart={() => {}} onUpdate={onUpdate}
       />
     );
@@ -107,7 +175,7 @@ describe('SetInProgress', () => {
     };
     render(
       <SetInProgress
-        mode="awaiting-input" set={set as never} trackingType="distance-duration" setIndex={0}
+        mode="awaiting-input" set={set} trackingType="distance-duration" setIndex={0}
         defaultWeight={null} defaultWeightUnit="kg" onStart={() => {}} onUpdate={onUpdate}
       />
     );
