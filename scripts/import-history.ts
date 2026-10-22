@@ -238,7 +238,7 @@ function parseTsv(content: string): RawRow[] {
     weight_kg: idx('weight_kg'),
   };
 
-  return lines.slice(1).map((line, i) => {
+  return lines.slice(1).map(line => {
     const cells = line.split('\t');
     return {
       date:      cells[col.date]?.trim() ?? '',

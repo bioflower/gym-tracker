@@ -21,7 +21,6 @@ async function fetchAll<T>(startPath: string): Promise<T[]> {
   const all: T[] = [];
   let path: string | null = startPath;
   while (path) {
-    // eslint-disable-next-line no-await-in-loop
     const raw = await apiRequest<Paginated<T> | T[]>(path);
     if (Array.isArray(raw)) {
       all.push(...raw);

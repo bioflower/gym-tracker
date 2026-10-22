@@ -30,6 +30,8 @@ export interface Exercise {
 export interface WeightRepSet {
   id: string;
   weight: number | null;
+  // Distinguishes an intentional clear from an unset historical default in the local cache.
+  weightCleared?: boolean;
   weightUnit: WeightUnit;
   reps: number | null;
   startedAt: string | null;
