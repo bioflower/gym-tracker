@@ -48,12 +48,12 @@ describe('Gym Tracker', () => {
     window.localStorage.clear();
   });
 
-  it('displays Workout A by default', () => {
+  it('displays the first workout by default', () => {
     renderApp();
-    expect(screen.getByText('Workout A')).toBeInTheDocument();
+    expect(screen.getByText('Full Body: Lunge & Press')).toBeInTheDocument();
   });
 
-  it('advances to Workout B after finishing Workout A', async () => {
+  it('advances to the second workout after finishing the first', async () => {
     renderApp();
     await act(async () => {
       fireEvent.click(screen.getByText('Start Workout'));
@@ -87,6 +87,9 @@ describe('Gym Tracker', () => {
     await act(async () => {
       fireEvent.click(screen.getByText('Finish Workout'));
     });
-    expect(screen.getByText('Workout B')).toBeInTheDocument();
+    expect(screen.getByText('Next workout - Full Body: Hip Thrust & Row')).toBeInTheDocument();
+    expect(screen.getByText(/Today's workout is done/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Preview' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start Workout' })).toBeInTheDocument();
   });
 });

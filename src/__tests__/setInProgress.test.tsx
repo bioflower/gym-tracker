@@ -147,6 +147,23 @@ describe('SetInProgress', () => {
     expect(onUpdate).toHaveBeenCalledWith('set-1', { reps: 134, weight: 80, weightUnit: 'kg', completed: true });
   });
 
+  it('pre-fills reps from defaultReps and completes with them on Enter', () => {
+    const onUpdate = vi.fn();
+    const set: WeightRepSet = {
+      id: 'set-2', weight: null, weightUnit: 'kg', reps: null,
+      startedAt: '2026-01-01T00:00:00.000Z', completedAt: '2026-01-01T00:00:05.000Z', completed: false,
+    };
+    render(
+      <SetInProgress
+        mode="awaiting-input" set={set} trackingType="weight-reps" setIndex={1}
+        defaultWeight={60} defaultWeightUnit="lb" defaultReps={8} onStart={() => {}} onUpdate={onUpdate}
+      />
+    );
+    expect(screen.getByDisplayValue('8')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByPlaceholderText('Reps'), { key: 'Enter' });
+    expect(onUpdate).toHaveBeenCalledWith('set-2', { reps: 8, weight: 60, weightUnit: 'lb', completed: true });
+  });
+
   it('awaiting-input mode for reps-only completes on Enter key with no weight field', () => {
     const onUpdate = vi.fn();
     const set = { id: 'set-1', reps: null, startedAt: '2026-01-01T00:00:00.000Z', completedAt: '2026-01-01T00:00:05.000Z', completed: false };

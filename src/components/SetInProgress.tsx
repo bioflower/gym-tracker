@@ -12,12 +12,13 @@ interface SetInProgressProps {
   setIndex: number;
   defaultWeight: number | null;
   defaultWeightUnit: WeightUnit;
+  defaultReps?: number | null;
   onStart: () => void;
   onUpdate: (setId: string, updates: Partial<ExerciseSet>) => void;
 }
 
 export function SetInProgress({
-  mode, set, trackingType, setIndex, defaultWeight, defaultWeightUnit, onStart, onUpdate,
+  mode, set, trackingType, setIndex, defaultWeight, defaultWeightUnit, defaultReps = null, onStart, onUpdate,
 }: SetInProgressProps) {
   const stopPending = useRef(false);
   useEffect(() => { stopPending.current = false; }, [set?.id, set?.startedAt, mode]);
@@ -54,8 +55,8 @@ export function SetInProgress({
   return (
     <div className="current-set-card">
       <span className="set-label">Set {setIndex + 1}</span>
-      {trackingType === 'weight-reps' && 'weightUnit' in set && <WeightRepsInput key={set.id} set={set} defaultWeight={defaultWeight} defaultWeightUnit={defaultWeightUnit} onUpdate={onUpdate} />}
-      {trackingType === 'reps' && 'reps' in set && <RepsInput key={set.id} set={set} onUpdate={onUpdate} />}
+      {trackingType === 'weight-reps' && 'weightUnit' in set && <WeightRepsInput key={set.id} set={set} defaultWeight={defaultWeight} defaultWeightUnit={defaultWeightUnit} defaultReps={defaultReps} onUpdate={onUpdate} />}
+      {trackingType === 'reps' && 'reps' in set && <RepsInput key={set.id} set={set} defaultReps={defaultReps} onUpdate={onUpdate} />}
       {trackingType === 'distance-duration' && 'distanceUnit' in set && <DistanceInput key={set.id} set={set} onUpdate={onUpdate} />}
     </div>
   );
@@ -130,11 +131,12 @@ function useSetCompletion(set: ExerciseSet, onUpdate: SetInProgressProps['onUpda
 }
 
 function WeightRepsInput({
-  set, defaultWeight, defaultWeightUnit, onUpdate,
+  set, defaultWeight, defaultWeightUnit, defaultReps, onUpdate,
 }: {
   set: WeightRepSet;
   defaultWeight: number | null;
   defaultWeightUnit: WeightUnit;
+  defaultReps: number | null;
   onUpdate: (id: string, u: Partial<ExerciseSet>) => void;
 }) {
   const useDefault = set.weight == null && !set.weightCleared;
@@ -144,7 +146,7 @@ function WeightRepsInput({
     weight: value, weightCleared: value === null,
     ...(useDefault ? { weightUnit } : {}),
   }));
-  const reps = useNumericDraft(set.reps, value => onUpdate(set.id, { reps: value }), true);
+  const reps = useNumericDraft(set.reps ?? defaultReps, value => onUpdate(set.id, { reps: value }), true);
   const completion = useSetCompletion(set, onUpdate, weight.valid && reps.valid && reps.number !== null, {
     reps: reps.number,
     ...(useDefault ? { weight: weight.number, weightUnit } : {}),
@@ -185,8 +187,8 @@ function WeightRepsInput({
   );
 }
 
-function RepsInput({ set, onUpdate }: { set: RepsOnlySet; onUpdate: SetInProgressProps['onUpdate'] }) {
-  const reps = useNumericDraft(set.reps, value => onUpdate(set.id, { reps: value }), true);
+function RepsInput({ set, defaultReps, onUpdate }: { set: RepsOnlySet; defaultReps: number | null; onUpdate: SetInProgressProps['onUpdate'] }) {
+  const reps = useNumericDraft(set.reps ?? defaultReps, value => onUpdate(set.id, { reps: value }), true);
   const completion = useSetCompletion(set, onUpdate, reps.valid && reps.number !== null, { reps: reps.number });
   return (
     <>

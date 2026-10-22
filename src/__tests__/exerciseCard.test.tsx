@@ -39,6 +39,63 @@ function renderCard(exercise: ActiveExercise, overrides: Partial<React.Component
   );
 }
 
+describe('ExerciseCard prefill', () => {
+  const prevSet = (reps: number): ExerciseSet => ({ id: 'p1', type: 'weight-reps', weight: 85, weightUnit: 'lb', reps, startedAt: null, completedAt: null, completed: true } as ExerciseSet);
+  const history = (reps: number) => [{
+    id: 'h', workoutDayId: 'd', workoutName: 'W', date: '2026-01-01', startedAt: null, completedAt: null, status: 'completed' as const,
+    exercises: [{ id: 'ce', exerciseId: 'ex-1', exerciseName: 'Bench Press', trackingType: 'weight-reps' as const, sets: [prevSet(reps)] }],
+  }] as unknown as React.ComponentProps<typeof ExerciseCard>['workoutHistory'];
+  const awaiting = (id: string, extra: ExerciseSet[] = []) => makeExercise({
+    sets: [...extra, { id, weight: null, weightUnit: 'kg', reps: null, startedAt: '2026-01-02T00:00:00.000Z', completedAt: '2026-01-02T00:00:05.000Z', completed: false } as ExerciseSet],
+  });
+  const open = () => fireEvent.click(document.querySelector('.exercise-card-header')!);
+
+  it('Last time follows the exercise after a swap', () => {
+    const session = (exerciseId: string, name: string, reps: number) => ({
+      id: 'h-' + exerciseId, workoutDayId: 'd', workoutName: 'W', date: exerciseId === 'ex-1' ? '2026-01-01' : '2026-01-02', startedAt: null, completedAt: null, status: 'completed' as const,
+      exercises: [{ id: 'ce-' + exerciseId, exerciseId, exerciseName: name, trackingType: 'weight-reps' as const,
+        sets: [{ id: 'p', type: 'weight-reps', weight: 50, weightUnit: 'kg', reps, completed: true }] }],
+    });
+    const workoutHistory = [session('ex-1', 'Bench Press', 7), session('ex-2', 'Push-up', 15)] as unknown as React.ComponentProps<typeof ExerciseCard>['workoutHistory'];
+    const props = { workoutHistory, allExercises: [exerciseDef, otherDef], onSetDone: () => {}, onUpdateSet: () => {}, onAddSet: () => {}, onRemoveSet: () => {}, onSwapExercise: () => {} };
+    const view = render(<ExerciseCard exercise={makeExercise()} {...props} />);
+    fireEvent.click(document.querySelector('.exercise-card-header')!);
+    expect(screen.getByText('50 kg × 7')).toBeInTheDocument();
+    view.rerender(<ExerciseCard exercise={makeExercise({ exerciseId: 'ex-2', exerciseName: 'Push-up' })} {...props} />);
+    expect(screen.getByText('50 kg × 15')).toBeInTheDocument();
+    expect(screen.queryByText('50 kg × 7')).not.toBeInTheDocument();
+  });
+
+  it('set 1 prefills last time weight and reps + 1', () => {
+    renderCard(awaiting('s1'), { workoutHistory: history(11) });
+    open();
+    expect(screen.getByDisplayValue('85')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Reps')).toHaveValue(12);
+    expect(screen.getByText('Suggested for today: 85 lb × 12')).toBeInTheDocument();
+  });
+
+  it('shows the suggestion before the set is started', () => {
+    renderCard(makeExercise(), { workoutHistory: history(11) });
+    open();
+    expect(screen.getByText('Suggested for today: 85 lb × 12')).toBeInTheDocument();
+  });
+
+  it('set 1 at 12 reps moves to 8 reps at the Epley-equivalent weight (85x12 -> 95x8)', () => {
+    renderCard(awaiting('s1'), { workoutHistory: history(12) });
+    open();
+    expect(screen.getByDisplayValue('95')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Reps')).toHaveValue(8);
+  });
+
+  it('set 2 copies weight and reps from completed set 1', () => {
+    const first = { id: 's1', weight: 90, weightUnit: 'kg', reps: 10, startedAt: 'x', completedAt: 'y', completed: true } as ExerciseSet;
+    renderCard(awaiting('s2', [first]), { workoutHistory: history(11) });
+    open();
+    expect(screen.getByDisplayValue('90')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Reps')).toHaveValue(10);
+  });
+});
+
 describe('ExerciseCard', () => {
   it('shows an idle Start button when no sets have been logged yet', () => {
     renderCard(makeExercise());

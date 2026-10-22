@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import type { ActiveExercise, Exercise, ExerciseSet, WorkoutSession } from '../types/gym';
+import type { ActiveExercise, Exercise, ExerciseSet, WeightRepSet, WorkoutSession } from '../types/gym';
 import { CompletedSetRow } from './CompletedSetRow';
 import { SetInProgress } from './SetInProgress';
 import { RestTimer } from './RestTimer';
 import { ExerciseSwapControl } from './ExerciseSwapControl';
 import { findMostRecentExerciseResult } from '../utils/exerciseHistory';
 import { BUTTON_LABELS } from '../constants/workout';
+import { suggestSet, formatSuggestion } from '../utils/progression';
 
 interface ExerciseCardProps {
   exercise: ActiveExercise;
@@ -23,9 +24,13 @@ export function ExerciseCard({
 }: ExerciseCardProps) {
   const [expanded, setExpanded] = useState(false);
   const previousResult = findMostRecentExerciseResult(workoutHistory, exercise.exerciseId, exercise.exerciseName);
-  const lastPreviousSet = previousResult?.sets[previousResult.sets.length - 1] ?? null;
-  const defaultWeight = lastPreviousSet?.type === 'weight-reps' ? (lastPreviousSet.weight ?? null) : null;
-  const defaultWeightUnit = lastPreviousSet?.type === 'weight-reps' ? (lastPreviousSet.weightUnit ?? 'kg') : 'kg';
+  const firstSet = exercise.sets[0]?.completed ? exercise.sets[0] : null;
+  const firstPrevious = previousResult?.sets[0] ?? null;
+  // Set 1: progress from last time's first set. Later sets: copy this workout's set 1.
+  // Live sets have no `type` field (only history does), so go by the exercise's tracking type.
+  const suggestion = suggestSet(exercise.trackingType, (firstSet ?? firstPrevious) as Partial<WeightRepSet> | null, !firstSet);
+  const { weight: defaultWeight, unit: defaultWeightUnit, reps: defaultReps } = suggestion;
+  const suggestionText = formatSuggestion(exercise.trackingType, suggestion);
 
   const completedSets = exercise.sets.filter(s => s.completed);
   const activeSet = exercise.sets.find(s => !s.completed && s.startedAt) ?? null;
@@ -87,6 +92,9 @@ export function ExerciseCard({
             </button>
           ) : (
             <>
+              {suggestionText && (
+                <div className="suggested-set">Suggested for today: {suggestionText}</div>
+              )}
               {activeSet ? (
                 <SetInProgress
                   mode={activeSet.completedAt ? 'awaiting-input' : 'active'}
@@ -95,6 +103,7 @@ export function ExerciseCard({
                   setIndex={exercise.sets.findIndex(s => s.id === activeSet.id)}
                   defaultWeight={defaultWeight}
                   defaultWeightUnit={defaultWeightUnit}
+                  defaultReps={defaultReps}
                   onStart={onAddSet}
                   onUpdate={onUpdateSet}
                 />
@@ -125,6 +134,7 @@ export function ExerciseCard({
                   setIndex={0}
                   defaultWeight={defaultWeight}
                   defaultWeightUnit={defaultWeightUnit}
+                  defaultReps={defaultReps}
                   onStart={onAddSet}
                   onUpdate={onUpdateSet}
                 />
