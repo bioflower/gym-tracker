@@ -75,3 +75,25 @@ class MeEndpointTests(APITestCase):
     def test_me_returns_401_when_unauthenticated(self) -> None:
         response = self.client.get("/api/auth/me/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class ChangePasswordTests(APITestCase):
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(email="cp@example.com", password="oldpass123")
+        self.url = "/api/auth/change-password/"
+
+    def test_changes_password(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url, {"old_password": "oldpass123", "new_password": "newpass456"})
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("newpass456"))
+
+    def test_wrong_old_password_rejected(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url, {"old_password": "nope", "new_password": "newpass456"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_requires_authentication(self) -> None:
+        response = self.client.post(self.url, {"old_password": "oldpass123", "new_password": "newpass456"})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
