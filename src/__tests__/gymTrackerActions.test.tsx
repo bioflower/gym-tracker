@@ -143,6 +143,18 @@ describe('useGymTracker actions', () => {
     expect(restored.result.current.data.activeWorkout!.exercises[0].sets[0]).toMatchObject(expected);
   });
 
+  it('resetExercise clears only that exercise\'s sets', () => {
+    const { result } = renderHook(() => useGymTracker());
+    act(() => result.current.startWorkout());
+    const [a, b] = result.current.data.activeWorkout!.exercises;
+    act(() => { result.current.addSet(a.id); result.current.addSet(b.id); });
+    act(() => result.current.resetExercise(a.id));
+    const [a2, b2] = result.current.data.activeWorkout!.exercises;
+    expect(a2.sets).toHaveLength(0);
+    expect(a2.startedAt).toBeNull();
+    expect(b2.sets).toHaveLength(1);
+  });
+
   it('swaps today\'s exercise before any set is logged, without touching the saved plan', async () => {
     renderApp();
     await act(async () => {

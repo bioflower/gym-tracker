@@ -133,7 +133,7 @@ a {
   cursor: pointer;
 }
 
-.exercise-card-header:hover { background: var(--surface-muted); }
+.exercise-card-header:hover:not(:has(.btn:hover)) { background: var(--surface-muted); }
 
 .exercise-name { font-size: 1rem; margin-bottom: var(--space-xs); }
 .exercise-meta { font-size: 0.8rem; color: var(--text-secondary); }

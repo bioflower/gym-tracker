@@ -32,7 +32,7 @@ function renderCard(exercise: ActiveExercise, overrides: Partial<React.Component
       onSetDone={() => {}}
       onUpdateSet={() => {}}
       onAddSet={() => {}}
-      onRemoveSet={() => {}}
+      onRemoveSet={() => {}} onReset={() => {}}
       onSwapExercise={() => {}}
       {...overrides}
     />
@@ -57,7 +57,7 @@ describe('ExerciseCard prefill', () => {
         sets: [{ id: 'p', type: 'weight-reps', weight: 50, weightUnit: 'kg', reps, completed: true }] }],
     });
     const workoutHistory = [session('ex-1', 'Bench Press', 7), session('ex-2', 'Push-up', 15)] as unknown as React.ComponentProps<typeof ExerciseCard>['workoutHistory'];
-    const props = { workoutHistory, allExercises: [exerciseDef, otherDef], onSetDone: () => {}, onUpdateSet: () => {}, onAddSet: () => {}, onRemoveSet: () => {}, onSwapExercise: () => {} };
+    const props = { workoutHistory, allExercises: [exerciseDef, otherDef], onSetDone: () => {}, onUpdateSet: () => {}, onAddSet: () => {}, onRemoveSet: () => {}, onReset: () => {}, onSwapExercise: () => {} };
     const view = render(<ExerciseCard exercise={makeExercise()} {...props} />);
     fireEvent.click(document.querySelector('.exercise-card-header')!);
     expect(screen.getByText('50 kg × 7')).toBeInTheDocument();
@@ -229,7 +229,7 @@ describe('ExerciseCard', () => {
             }));
           }}
           onAddSet={() => {}}
-          onRemoveSet={() => {}}
+          onRemoveSet={() => {}} onReset={() => {}}
           onSwapExercise={() => {}}
         />
       );

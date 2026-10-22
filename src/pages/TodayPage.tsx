@@ -11,7 +11,7 @@ export function TodayPage() {
   const {
     data, startWorkout, getCurrentWorkoutDay,
     finishWorkout, skipWorkout, setExerciseDone,
-    updateSet, addSet, removeSet, swapExerciseForToday,
+    updateSet, addSet, removeSet, resetExercise, swapExerciseForToday,
     getAllExercises, getNextWorkout,
   } = useGymTracker();
   const [showModal, setShowModal] = useState(false);
@@ -86,6 +86,7 @@ export function TodayPage() {
             onUpdateSet={(setId, updates) => updateSet(exercise.id, setId, updates)}
             onAddSet={() => addSet(exercise.id)}
             onRemoveSet={(setId) => removeSet(exercise.id, setId)}
+            onReset={() => resetExercise(exercise.id)}
             onSwapExercise={(newExerciseId) => swapExerciseForToday(exercise.id, newExerciseId)}
           />
         ))}
