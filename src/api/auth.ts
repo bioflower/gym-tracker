@@ -21,6 +21,13 @@ export async function login(email: string, password: string): Promise<void> {
   setTokens(data);
 }
 
+export async function changePassword(oldPassword: string, newPassword: string): Promise<void> {
+  await apiRequest<void>('/auth/change-password/', {
+    method: 'POST',
+    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+  });
+}
+
 export async function getMe(): Promise<User> {
   return apiRequest<User>('/auth/me/');
 }
