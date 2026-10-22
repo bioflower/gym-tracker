@@ -5,10 +5,11 @@ import type {
 } from '../types/gym';
 import { loadAppData, saveAppData, clearAppData, getDefaultAppData } from '../utils/storage';
 import { advanceWorkout, getCurrentWorkout } from '../utils/rotation';
-import { generateId } from '../utils/validation';
+import { generateId, uuidOrNull } from '../utils/validation';
 import { getTodayISO, nowISO } from '../utils/dateTime';
 import * as workouts from '../api/workouts';
 import { isOnline, enqueue, setupSyncListener } from '../api/sync';
+import { buildWorkoutName } from '../utils/workoutName';
 import { convertActiveToCompletedExercise } from '../utils/exerciseHistory';
 
 export function useGymTracker() {
@@ -125,9 +126,19 @@ export function useGymTracker() {
   const finishWorkout = useCallback(async () => {
     if (!data.activeWorkout) return;
     const completedAt = nowISO();
+    const doneIds = data.activeWorkout.exercises
+      .filter(e => e.completed || e.sets.some(s => s.completed))
+      .map(e => e.exerciseId);
+    if (doneIds.length === 0) {
+      setData(prev => ({ ...prev, activeWorkout: null }));
+      return;
+    }
+    const workoutName = buildWorkoutName(doneIds, [...data.presetExercises, ...data.customExercises])
+      || data.activeWorkout.workoutName;
     const sessionData: Record<string, unknown> = {
-      workout_day: data.activeWorkout.workoutDayId,
-      workout_name: data.activeWorkout.workoutName,
+      id: data.activeWorkout.id,
+      workout_day: uuidOrNull(data.activeWorkout.workoutDayId),
+      workout_name: workoutName,
       date: data.activeWorkout.date,
       started_at: data.activeWorkout.startedAt,
       completed_at: completedAt,
@@ -157,7 +168,7 @@ export function useGymTracker() {
     const newSession: WorkoutSession = {
       id: data.activeWorkout.id,
       workoutDayId: data.activeWorkout.workoutDayId,
-      workoutName: data.activeWorkout.workoutName,
+      workoutName,
       date: data.activeWorkout.date,
       startedAt: data.activeWorkout.startedAt,
       completedAt,
@@ -183,13 +194,15 @@ export function useGymTracker() {
         ? prev.workoutHistory
         : [newSession, ...prev.workoutHistory],
     }));
-  }, [data.activeWorkout]);
+  }, [data.activeWorkout, data.presetExercises, data.customExercises]);
 
   const skipWorkout = useCallback(async () => {
     const workout = getCurrentWorkout(data.workoutPlan, data.currentWorkoutIndex);
     if (!workout) return;
+    const skippedId = generateId();
     const sessionData: Record<string, unknown> = {
-      workout_day: workout.id,
+      id: skippedId,
+      workout_day: uuidOrNull(workout.id),
       workout_name: workout.name,
       date: getTodayISO(),
       started_at: null,
@@ -209,7 +222,7 @@ export function useGymTracker() {
     }
 
     const skippedSession: WorkoutSession = {
-      id: generateId(),
+      id: skippedId,
       workoutDayId: workout.id,
       workoutName: workout.name,
       date: getTodayISO(),
@@ -226,6 +239,25 @@ export function useGymTracker() {
       workoutHistory: [skippedSession, ...prev.workoutHistory],
     }));
   }, [data.workoutPlan, data.currentWorkoutIndex]);
+
+  const renameSession = useCallback(async (id: string, workoutName: string) => {
+    const name = workoutName.trim();
+    if (!name) return;
+    setData(prev => ({
+      ...prev,
+      workoutHistory: prev.workoutHistory.map(s => (s.id === id ? { ...s, workoutName: name } : s)),
+    }));
+    const request = { endpoint: `/workouts/sessions/${id}/`, method: 'PATCH', body: { workout_name: name } };
+    if (isOnline()) {
+      try {
+        await workouts.renameSession(id, name);
+      } catch {
+        enqueue(request);
+      }
+    } else {
+      enqueue(request);
+    }
+  }, []);
 
   const updateSet = useCallback((exerciseId: string, setId: string, updates: Partial<ExerciseSet>) => {
     setData(prev => {
@@ -390,6 +422,7 @@ export function useGymTracker() {
     getCurrentWorkoutDay,
     finishWorkout,
     skipWorkout,
+    renameSession,
     updateSet,
     addSet,
     removeSet,

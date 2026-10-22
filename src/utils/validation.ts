@@ -49,3 +49,10 @@ export function validateDuration(value: number | null): string | null {
 export function generateId(): string {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Backend workout_day is a UUID FK; the local default plan uses slugs like "workout-a". */
+export function uuidOrNull(id: string): string | null {
+  return UUID_RE.test(id) ? id : null;
+}

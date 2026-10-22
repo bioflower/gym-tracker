@@ -188,3 +188,10 @@ export async function saveSession(session: Partial<WorkoutSession>): Promise<Wor
     body: JSON.stringify(session),
   });
 }
+
+export async function renameSession(id: string, workoutName: string): Promise<void> {
+  await apiRequest(`/workouts/sessions/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ workout_name: workoutName }),
+  });
+}
