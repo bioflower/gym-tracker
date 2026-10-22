@@ -17,7 +17,7 @@ export function ExerciseSwapControl({ currentExerciseId, allExercises, disabled,
       onChange={e => { if (e.target.value !== currentExerciseId) onSwap(e.target.value); }}
       aria-label="Change exercise"
     >
-      {allExercises.map(ex => (
+      {[...allExercises].sort((a, b) => a.name.localeCompare(b.name)).map(ex => (
         <option key={ex.id} value={ex.id}>{ex.name}</option>
       ))}
     </select>

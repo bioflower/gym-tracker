@@ -443,3 +443,18 @@ a {
 }
 .history-name-input:hover { border-color: var(--border); }
 .history-name-input:focus { border-color: var(--text-primary); background: var(--surface); outline: none; }
+
+/* 1RM chart */
+.orm-controls { display: flex; gap: var(--space-sm); margin-bottom: var(--space-md); }
+.orm-controls .input:first-child { flex: 1; }
+.orm-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-medium); padding: var(--space-md); }
+.orm-stats { display: flex; gap: var(--space-lg); margin-bottom: var(--space-md); }
+.orm-stats span { display: block; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.orm-stats strong { font-size: 1.15rem; }
+.orm-up { color: var(--success); }
+.orm-down { color: var(--danger); }
+.orm-chart { width: 100%; height: auto; display: block; }
+.orm-readout { margin: var(--space-sm) 0 0; text-align: center; color: var(--text-secondary); }
+.orm-readout strong { color: var(--text-primary); }
+.orm-empty { color: var(--text-secondary); }
+.orm-ranges { display: flex; gap: var(--space-sm); margin-bottom: var(--space-md); }

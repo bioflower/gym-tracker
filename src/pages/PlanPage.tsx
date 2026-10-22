@@ -130,7 +130,7 @@ export function PlanPage() {
                       onBlur={() => setEditingExerciseId(null)}
                       autoFocus
                     >
-                      {allExercises.map(e => (
+                      {[...allExercises].sort((a, b) => a.name.localeCompare(b.name)).map(e => (
                         <option key={e.id} value={e.id}>{e.name}</option>
                       ))}
                     </select>
@@ -157,7 +157,7 @@ export function PlanPage() {
                   autoFocus
                 >
                   <option value="" disabled>Select exercise...</option>
-                  {allExercises.map(e => (
+                  {[...allExercises].sort((a, b) => a.name.localeCompare(b.name)).map(e => (
                     <option key={e.id} value={e.id}>{e.name}</option>
                   ))}
                 </select>
