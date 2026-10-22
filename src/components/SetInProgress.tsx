@@ -114,6 +114,15 @@ function useNumericDraft(value: number | null | undefined, onChange: (value: num
   };
 }
 
+// A cleared field must not fall back to the prefilled default, or the last digit can't be deleted.
+function useRepsDraft(set: { id: string; reps: number | null }, defaultReps: number | null, onUpdate: SetInProgressProps['onUpdate']) {
+  const [cleared, setCleared] = useState(false);
+  return useNumericDraft(cleared ? null : set.reps ?? defaultReps, value => {
+    setCleared(value === null);
+    onUpdate(set.id, { reps: value });
+  }, true);
+}
+
 function useSetCompletion(set: ExerciseSet, onUpdate: SetInProgressProps['onUpdate'], valid: boolean, updates: Partial<ExerciseSet>) {
   const pending = useRef(false);
   useEffect(() => { if (!set.completed) pending.current = false; }, [set.completed]);
@@ -146,7 +155,7 @@ function WeightRepsInput({
     weight: value, weightCleared: value === null,
     ...(useDefault ? { weightUnit } : {}),
   }));
-  const reps = useNumericDraft(set.reps ?? defaultReps, value => onUpdate(set.id, { reps: value }), true);
+  const reps = useRepsDraft(set, defaultReps, onUpdate);
   const completion = useSetCompletion(set, onUpdate, weight.valid && reps.valid && reps.number !== null, {
     reps: reps.number,
     ...(useDefault ? { weight: weight.number, weightUnit } : {}),
@@ -188,7 +197,7 @@ function WeightRepsInput({
 }
 
 function RepsInput({ set, defaultReps, onUpdate }: { set: RepsOnlySet; defaultReps: number | null; onUpdate: SetInProgressProps['onUpdate'] }) {
-  const reps = useNumericDraft(set.reps ?? defaultReps, value => onUpdate(set.id, { reps: value }), true);
+  const reps = useRepsDraft(set, defaultReps, onUpdate);
   const completion = useSetCompletion(set, onUpdate, reps.valid && reps.number !== null, { reps: reps.number });
   return (
     <>

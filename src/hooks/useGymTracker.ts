@@ -319,6 +319,23 @@ export function useGymTracker() {
     });
   }, []);
 
+  const resetExercise = useCallback((exerciseId: string) => {
+    setData(prev => {
+      if (!prev.activeWorkout) return prev;
+      return {
+        ...prev,
+        activeWorkout: {
+          ...prev.activeWorkout,
+          exercises: prev.activeWorkout.exercises.map(e =>
+            e.id === exerciseId
+              ? { ...e, sets: [], notes: '', startedAt: null, completedAt: null, completed: false }
+              : e
+          ),
+        },
+      };
+    });
+  }, []);
+
   const setExerciseDone = useCallback((exerciseId: string, done: boolean) => {
     setData(prev => {
       if (!prev.activeWorkout) return prev;
@@ -426,6 +443,7 @@ export function useGymTracker() {
     updateSet,
     addSet,
     removeSet,
+    resetExercise,
     setExerciseDone,
     swapExerciseForToday,
     addCustomExercise,
