@@ -7,6 +7,7 @@ import { PlanPage } from './pages/PlanPage';
 import { ExerciseLibraryPage } from './pages/ExerciseLibraryPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { OneRepMaxPage } from './pages/OneRepMaxPage';
+import { AccountPage } from './pages/AccountPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 
@@ -28,6 +29,7 @@ export default function App() {
                     <Route path="/exercises" element={<ExerciseLibraryPage />} />
                     <Route path="/history" element={<HistoryPage />} />
                     <Route path="/one-rep-max" element={<OneRepMaxPage />} />
+                    <Route path="/account" element={<AccountPage />} />
                   </Routes>
                 </main>
               </div>
