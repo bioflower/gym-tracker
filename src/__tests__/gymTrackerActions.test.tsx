@@ -7,6 +7,7 @@ import { Navigation } from '../components/Navigation';
 import { TodayPage } from '../pages/TodayPage';
 import { BUTTON_LABELS } from '../constants/workout';
 import { useGymTracker } from '../hooks/useGymTracker';
+import { loadAppData } from '../utils/storage';
 
 vi.mock('../api/sync', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api/sync')>();
@@ -114,6 +115,29 @@ describe('useGymTracker actions', () => {
     // History must update immediately — no page reload or syncFromServer required
     expect(result.current.data.workoutHistory).toHaveLength(1);
     expect(result.current.data.workoutHistory[0].status).toBe('completed');
+  });
+
+  it('merges batched field updates immutably and restores intentionally cleared weights from the cache', () => {
+    const { result, unmount } = renderHook(() => useGymTracker());
+    act(() => result.current.startWorkout());
+    const exerciseId = result.current.data.activeWorkout!.exercises[0].id;
+    act(() => result.current.addSet(exerciseId));
+    const before = result.current.data.activeWorkout!;
+    const originalSet = before.exercises[0].sets[0];
+    act(() => {
+      result.current.updateSet(exerciseId, originalSet.id, { weight: 20, weightUnit: 'lb' });
+      result.current.updateSet(exerciseId, originalSet.id, { reps: 10 });
+    });
+    expect(result.current.data.activeWorkout!.exercises[0].sets[0]).toMatchObject({ weight: 20, weightUnit: 'lb', reps: 10 });
+    expect(originalSet).toMatchObject({ weight: null, weightUnit: 'kg', reps: null });
+    expect(result.current.data.activeWorkout).not.toBe(before);
+    expect(result.current.data.activeWorkout!.exercises[1]).toBe(before.exercises[1]);
+    act(() => result.current.updateSet(exerciseId, originalSet.id, { weight: null, weightCleared: true }));
+    const expected = { weight: null, weightCleared: true, weightUnit: 'lb', reps: 10 };
+    expect(loadAppData().activeWorkout!.exercises[0].sets[0]).toMatchObject(expected);
+    unmount();
+    const restored = renderHook(() => useGymTracker());
+    expect(restored.result.current.data.activeWorkout!.exercises[0].sets[0]).toMatchObject(expected);
   });
 
   it('swaps today\'s exercise before any set is logged, without touching the saved plan', async () => {

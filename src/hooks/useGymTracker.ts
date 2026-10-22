@@ -183,7 +183,7 @@ export function useGymTracker() {
         ? prev.workoutHistory
         : [newSession, ...prev.workoutHistory],
     }));
-  }, [data.activeWorkout, data.workoutPlan, data.currentWorkoutIndex]);
+  }, [data.activeWorkout]);
 
   const skipWorkout = useCallback(async () => {
     const workout = getCurrentWorkout(data.workoutPlan, data.currentWorkoutIndex);
@@ -225,7 +225,7 @@ export function useGymTracker() {
       currentWorkoutIndex: advanceWorkout(prev.workoutPlan, prev.currentWorkoutIndex),
       workoutHistory: [skippedSession, ...prev.workoutHistory],
     }));
-  }, [data.workoutPlan, data.currentWorkoutIndex, getCurrentWorkout]);
+  }, [data.workoutPlan, data.currentWorkoutIndex]);
 
   const updateSet = useCallback((exerciseId: string, setId: string, updates: Partial<ExerciseSet>) => {
     setData(prev => {
