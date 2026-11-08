@@ -51,23 +51,23 @@ export function useGymTracker() {
     }
 
     // Ensure sessions are newest-first for findMostRecentExerciseResult
-    const sortedSessions = sessions.length > 0
-      ? [...sessions].sort((a, b) => {
-          const dateCmp = b.date.localeCompare(a.date);
-          if (dateCmp !== 0) return dateCmp;
-          return (b.completedAt ?? '').localeCompare(a.completedAt ?? '');
-        })
-      : [];
+    const newestFirst = (a: WorkoutSession, b: WorkoutSession) =>
+      b.date.localeCompare(a.date) || (b.completedAt ?? '').localeCompare(a.completedAt ?? '');
 
-    setData(prev => ({
-      ...prev,
-      ...(exercises ? {
-        presetExercises: exercises.filter(e => e.isPreset),
-        customExercises: exercises.filter(e => !e.isPreset),
-      } : {}),
-      ...(plan && plan.length > 0 ? { workoutPlan: plan } : {}),
-      ...(sortedSessions.length > 0 ? { workoutHistory: sortedSessions } : {}),
-    }));
+    setData(prev => {
+      // Sessions finished offline are still in the sync queue; keep them until the server returns them.
+      const serverIds = new Set(sessions.map(s => s.id));
+      const unsynced = prev.workoutHistory.filter(s => !serverIds.has(s.id));
+      return {
+        ...prev,
+        ...(exercises ? {
+          presetExercises: exercises.filter(e => e.isPreset),
+          customExercises: exercises.filter(e => !e.isPreset),
+        } : {}),
+        ...(plan && plan.length > 0 ? { workoutPlan: plan } : {}),
+        ...(sessions.length > 0 ? { workoutHistory: [...sessions, ...unsynced].sort(newestFirst) } : {}),
+      };
+    });
   }
 
   const createEmptySets = useCallback((trackingType: string, count: number = 3): ExerciseSet[] => {

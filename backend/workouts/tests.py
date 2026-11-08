@@ -1,10 +1,11 @@
 import uuid
 
+from django.core.management import call_command
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import User
-from workouts.models import WorkoutSession
+from workouts.models import CompletedExercise, Exercise, WorkoutSession
 
 
 class SessionRenameTests(APITestCase):
@@ -33,3 +34,18 @@ class SessionRenameTests(APITestCase):
         self.client.force_authenticate(User.objects.create_user(email="b@example.com", password="pass1234"))
         response = self.client.patch(f"/api/workouts/sessions/{sid}/", {"workout_name": "x"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class MergeDuplicateExercisesTests(APITestCase):
+    def test_custom_exercise_is_merged_into_same_named_preset(self) -> None:
+        user = User.objects.create_user(email="a@example.com", password="pass1234")
+        preset = Exercise.objects.create(name="Bench Press", category="chest", tracking_type="weight-reps", is_preset=True)
+        dup = Exercise.objects.create(user=user, name="bench press", category="other", tracking_type="weight-reps")
+        session = WorkoutSession.objects.create(user=user, date="2026-10-21", status="completed")
+        ce = CompletedExercise.objects.create(workout_session=session, exercise=dup, exercise_name="Bench Press", tracking_type="weight-reps")
+
+        call_command("merge_duplicate_exercises")
+
+        ce.refresh_from_db()
+        self.assertEqual(ce.exercise, preset)
+        self.assertFalse(Exercise.objects.filter(pk=dup.pk).exists())
