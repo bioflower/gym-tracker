@@ -1,7 +1,9 @@
 import type { WorkoutSession, CompletedExercise, ActiveExercise, TrackingType, CompletedSet, ExerciseSet } from '../types/gym';
 
 // Exercises left undone are saved with no completed sets; they carry no history.
-const hasLoggedSet = (e: CompletedExercise) => e.sets.some(s => s.completed !== false);
+const isLogged = (s: CompletedSet) => s.completed !== false;
+const hasLoggedSet = (e: CompletedExercise) => e.sets.some(isLogged);
+const loggedOnly = (e: CompletedExercise): CompletedExercise => ({ ...e, sets: e.sets.filter(isLogged) });
 
 export function findMostRecentExerciseResult(
   history: WorkoutSession[],
@@ -23,7 +25,7 @@ export function findMostRecentExerciseResult(
 
     // Primary: exact exerciseId match (handles preset UUIDs correctly)
     const byId = session.exercises.find(e => e.exerciseId === exerciseId && hasLoggedSet(e));
-    if (byId) return byId;
+    if (byId) return loggedOnly(byId);
 
     // Fallback: match by exerciseName (case-insensitive)
     // This covers cases where the same logical exercise has different UUIDs
@@ -32,7 +34,7 @@ export function findMostRecentExerciseResult(
       const byName = session.exercises.find(
         e => e.exerciseName.toLowerCase().trim() === normalizedName && hasLoggedSet(e)
       );
-      if (byName) return byName;
+      if (byName) return loggedOnly(byName);
     }
   }
   return null;
