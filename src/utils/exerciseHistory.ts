@@ -1,5 +1,8 @@
 import type { WorkoutSession, CompletedExercise, ActiveExercise, TrackingType, CompletedSet, ExerciseSet } from '../types/gym';
 
+// Exercises left undone are saved with no completed sets; they carry no history.
+const hasLoggedSet = (e: CompletedExercise) => e.sets.some(s => s.completed !== false);
+
 export function findMostRecentExerciseResult(
   history: WorkoutSession[],
   exerciseId: string,
@@ -19,7 +22,7 @@ export function findMostRecentExerciseResult(
     if (session.status !== 'completed') continue;
 
     // Primary: exact exerciseId match (handles preset UUIDs correctly)
-    const byId = session.exercises.find(e => e.exerciseId === exerciseId);
+    const byId = session.exercises.find(e => e.exerciseId === exerciseId && hasLoggedSet(e));
     if (byId) return byId;
 
     // Fallback: match by exerciseName (case-insensitive)
@@ -27,7 +30,7 @@ export function findMostRecentExerciseResult(
     // between local import and server (custom exercises created via upload).
     if (normalizedName) {
       const byName = session.exercises.find(
-        e => e.exerciseName.toLowerCase().trim() === normalizedName
+        e => e.exerciseName.toLowerCase().trim() === normalizedName && hasLoggedSet(e)
       );
       if (byName) return byName;
     }
